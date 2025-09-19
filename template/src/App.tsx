@@ -8,7 +8,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm h-16 flex justify-between items-center border-b shadow-sm px-4">
-        <h2 className="text-xl font-semibold text-primary">Chef</h2>
+        <h2 className="text-xl font-semibold text-primary">Zapdev</h2>
         <SignOutButton />
       </header>
       <main className="flex-1 flex items-center justify-center p-8">
@@ -35,7 +35,7 @@ function Content() {
   return (
     <div className="flex flex-col gap-section">
       <div className="text-center">
-        <h1 className="text-5xl font-bold text-primary mb-4">Cook with Chef</h1>
+        <h1 className="text-5xl font-bold text-primary mb-4">Cook with Zapdev</h1>
         <Authenticated>
           <p className="text-xl text-secondary">
             Welcome back, {loggedInUser?.email ?? "friend"}!

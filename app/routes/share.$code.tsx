@@ -9,16 +9,16 @@ import type { Preloaded } from 'convex/react';
 
 export const meta: MetaFunction<typeof loader> = ({ data }) => {
   if (!data?.shareQuery) {
-    return [{ title: 'Not Found | Chef' }];
+    return [{ title: 'Not Found | Zapdev' }];
   }
 
   const share = preloadedQueryResult(data.shareQuery as Preloaded<typeof api.socialShare.getSocialShare>);
 
   const { description, thumbnailUrl, author } = share;
   const authorText = author ? `by ${author.username}` : '';
-  const title = description ? `${description} ${authorText} | Chef` : `Shared Project ${authorText} | Chef`;
+  const title = description ? `${description} ${authorText} | Zapdev` : `Shared Project ${authorText} | Zapdev`;
   const ogTitle = description || 'Shared Project';
-  const ogDesc = `Cooked with Chef ${authorText}`;
+  const ogDesc = `Cooked with Zapdev ${authorText}`;
 
   return [
     { title },
@@ -26,15 +26,15 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { property: 'og:title', content: ogTitle },
     { property: 'og:description', content: ogDesc },
     { property: 'og:type', content: 'website' },
-    { property: 'og:site_name', content: 'Chef' },
+    { property: 'og:site_name', content: 'Zapdev' },
     {
       property: 'og:image',
-      content: thumbnailUrl || 'https://chef.convex.dev/social_preview_share.png',
+      content: thumbnailUrl || 'https://zapdev.convex.dev/social_preview_share.png',
     },
     { property: 'twitter:card', content: 'summary_large_image' },
     {
       property: 'twitter:image',
-      content: thumbnailUrl || 'https://chef.convex.dev/social_preview_share.png',
+      content: thumbnailUrl || 'https://zapdev.convex.dev/social_preview_share.png',
     },
     { property: 'twitter:title', content: ogTitle },
     { property: 'twitter:description', content: ogDesc },

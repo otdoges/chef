@@ -1,5 +1,5 @@
-// All Chef projects created after May 1 2025 dynamically import this script when they
-// receive a postMessage of type 'chefPreviewRequest' in development.
+// All Zapdev projects created after May 1 2025 dynamically import this script when they
+// receive a postMessage of type 'zapdevPreviewRequest' in development.
 import { toPng } from 'html-to-image';
 
 export async function respondToMessage(message: MessageEvent) {
@@ -8,7 +8,7 @@ export async function respondToMessage(message: MessageEvent) {
   if (message.source !== window.parent) {
     return;
   }
-  if (message.data.type !== 'chefPreviewRequest') {
+  if (message.data.type !== 'zapdevPreviewRequest') {
     return;
   }
   if (message.data.request === 'ping') {

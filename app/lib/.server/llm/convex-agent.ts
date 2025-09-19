@@ -10,17 +10,17 @@ import {
   type ProviderMetadata,
   type StepResult,
 } from 'ai';
-import { ROLE_SYSTEM_PROMPT, generalSystemPrompt } from 'chef-agent/prompts/system';
-import { deployTool } from 'chef-agent/tools/deploy';
-import { viewTool } from 'chef-agent/tools/view';
-import type { ConvexToolSet } from 'chef-agent/types';
-import { npmInstallTool } from 'chef-agent/tools/npmInstall';
+import { ROLE_SYSTEM_PROMPT, generalSystemPrompt } from 'zapdev-agent/prompts/system';
+import { deployTool } from 'zapdev-agent/tools/deploy';
+import { viewTool } from 'zapdev-agent/tools/view';
+import type { ConvexToolSet } from 'zapdev-agent/types';
+import { npmInstallTool } from 'zapdev-agent/tools/npmInstall';
 import type { Tracer } from '~/lib/.server/chat';
-import { editTool } from 'chef-agent/tools/edit';
+import { editTool } from 'zapdev-agent/tools/edit';
 import { captureException, captureMessage } from '@sentry/remix';
-import type { SystemPromptOptions } from 'chef-agent/types';
-import { cleanupAssistantMessages } from 'chef-agent/cleanupAssistantMessages';
-import { logger } from 'chef-agent/utils/logger';
+import type { SystemPromptOptions } from 'zapdev-agent/types';
+import { cleanupAssistantMessages } from 'zapdev-agent/cleanupAssistantMessages';
+import { logger } from 'zapdev-agent/utils/logger';
 import { encodeUsageAnnotation, encodeModelAnnotation } from '~/lib/.server/usage';
 import { compressWithLz4Server } from '~/lib/compression.server';
 import { getConvexSiteUrl } from '~/lib/convexSiteUrl';
@@ -31,11 +31,11 @@ import type { Usage } from '~/lib/common/annotations';
 import type { UsageRecord } from '@convex/schema';
 import { getProvider, type ModelProvider } from '~/lib/.server/llm/provider';
 import { getEnv } from '~/lib/.server/env';
-import { calculateChefTokens, usageFromGeneration } from '~/lib/common/usage';
-import { lookupDocsTool } from 'chef-agent/tools/lookupDocs';
-import { addEnvironmentVariablesTool } from 'chef-agent/tools/addEnvironmentVariables';
-import { getConvexDeploymentNameTool } from 'chef-agent/tools/getConvexDeploymentName';
-import type { PromptCharacterCounts } from 'chef-agent/ChatContextManager';
+import { calculateZapdevTokens, usageFromGeneration } from '~/lib/common/usage';
+import { lookupDocsTool } from 'zapdev-agent/tools/lookupDocs';
+import { addEnvironmentVariablesTool } from 'zapdev-agent/tools/addEnvironmentVariables';
+import { getConvexDeploymentNameTool } from 'zapdev-agent/tools/getConvexDeploymentName';
+import type { PromptCharacterCounts } from 'zapdev-agent/ChatContextManager';
 
 type Messages = Message[];
 
@@ -452,7 +452,7 @@ async function storeDebugPrompt(
     const compressedData = compressWithLz4Server(promptMessageData);
 
     type Metadata = Omit<(typeof internal.debugPrompt.storeDebugPrompt)['_args'], 'promptCoreMessagesStorageId'>;
-    const { chefTokens } = calculateChefTokens(usage, modelProvider);
+    const { zapdevTokens } = calculateZapdevTokens(usage, modelProvider);
 
     const metadata = {
       chatInitialId,
@@ -460,7 +460,7 @@ async function storeDebugPrompt(
       finishReason,
       modelId,
       usage: buildUsageRecord(usage),
-      chefTokens,
+      zapdevTokens,
     } satisfies Metadata;
 
     const formData = new FormData();

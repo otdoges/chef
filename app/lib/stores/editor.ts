@@ -1,7 +1,7 @@
 import { atom, computed, map, type MapStore, type WritableAtom } from 'nanostores';
-import type { EditorDocument, ScrollPosition } from 'chef-agent/types';
-import type { AbsolutePath } from 'chef-agent/utils/workDir';
-import type { FileMap } from 'chef-agent/types';
+import type { EditorDocument, ScrollPosition } from 'zapdev-agent/types';
+import type { AbsolutePath } from 'zapdev-agent/utils/workDir';
+import type { FileMap } from 'zapdev-agent/types';
 import type { FilesStore } from '~/lib/stores/files';
 
 type EditorDocuments = Record<string, EditorDocument>;

@@ -1,7 +1,8 @@
-import type { WebContainer } from '@webcontainer/api';
+import type { CodeInterpreter } from '@e2b/code-interpreter';
 import { atom } from 'nanostores';
-import { createScopedLogger } from 'chef-agent/utils/logger';
+import { createScopedLogger } from 'zapdev-agent/utils/logger';
 import { withResolvers } from '~/utils/promises';
+import { executeCommand } from '~/lib/e2b';
 
 export interface PreviewInfo {
   port: number;
@@ -12,135 +13,159 @@ export interface PreviewInfo {
 
 const PROXY_PORT_RANGE_START = 0xc4ef;
 
-// This is a separate codebase.
-// eslint-disable-next-line no-restricted-imports
-import PROXY_SERVER_SOURCE from '../../../proxy/proxy.bundled.cjs?raw';
-
-type ProxyState = { sourcePort: number; start: (arg: { proxyUrl: string }) => void; stop: () => void };
+type ProxyState = { 
+  sourcePort: number; 
+  start: (arg: { proxyUrl: string }) => void; 
+  stop: () => void; 
+  processId?: string;
+};
 
 export class PreviewsStore {
   #availablePreviews = new Map<number, PreviewInfo>();
-  #webcontainer: Promise<WebContainer>;
+  #codeInterpreter: Promise<CodeInterpreter>;
 
   previews = atom<PreviewInfo[]>([]);
 
   #proxies = new Map<number, ProxyState>();
+  #portCheckInterval: number | null = null;
 
-  constructor(webcontainerPromise: Promise<WebContainer>) {
-    this.#webcontainer = webcontainerPromise;
+  constructor(codeInterpreterPromise: Promise<CodeInterpreter>) {
+    this.#codeInterpreter = codeInterpreterPromise;
     this.#init();
   }
 
   async #init() {
-    const webcontainer = await this.#webcontainer;
+    const codeInterpreter = await this.#codeInterpreter;
 
-    // Listen for server ready events
-    webcontainer.on('server-ready', (port, url) => {
-      console.log('[Preview] Server ready on port:', port, url);
-    });
+    // Start monitoring for dev servers
+    this.#startPortMonitoring();
+  }
 
-    // Listen for port events
-    webcontainer.on('port', (port, type, url) => {
-      if (this.#proxies.has(port)) {
-        if (type === 'open') {
-          this.#proxies.get(port)?.start({ proxyUrl: url });
+  #startPortMonitoring() {
+    // Check for active ports every 3 seconds
+    this.#portCheckInterval = window.setInterval(async () => {
+      try {
+        await this.#checkActivePorts();
+      } catch (error) {
+        console.error('Error checking active ports:', error);
+      }
+    }, 3000);
+  }
+
+  async #checkActivePorts() {
+    try {
+      // Check for common dev server ports
+      const commonPorts = [3000, 5173, 8080, 4000, 5000, 8000];
+      
+      for (const port of commonPorts) {
+        const isPortOpen = await this.#isPortOpen(port);
+        const existingPreview = this.#availablePreviews.get(port);
+        
+        if (isPortOpen && !existingPreview) {
+          // New port opened
+          const baseUrl = `http://localhost:${port}`;
+          const previewInfo: PreviewInfo = {
+            port,
+            ready: true,
+            baseUrl,
+            iframe: null,
+          };
+          
+          this.#availablePreviews.set(port, previewInfo);
+          const previews = this.previews.get();
+          previews.push(previewInfo);
+          this.previews.set([...previews]);
+          
+          console.log('[Preview] Server detected on port:', port, baseUrl);
+        } else if (!isPortOpen && existingPreview) {
+          // Port closed
+          this.#availablePreviews.delete(port);
+          this.previews.set(this.previews.get().filter((preview) => preview.port !== port));
+          console.log('[Preview] Server closed on port:', port);
         }
-        return;
       }
+    } catch (error) {
+      console.error('Error in port monitoring:', error);
+    }
+  }
 
-      let previewInfo = this.#availablePreviews.get(port);
-
-      if (type === 'close' && previewInfo) {
-        this.#availablePreviews.delete(port);
-        this.previews.set(this.previews.get().filter((preview) => preview.port !== port));
-        return;
-      }
-
-      const previews = this.previews.get();
-
-      if (!previewInfo) {
-        previewInfo = { port, ready: type === 'open', baseUrl: url, iframe: null };
-        this.#availablePreviews.set(port, previewInfo);
-        previews.push(previewInfo);
-      }
-
-      previewInfo.ready = type === 'open';
-      previewInfo.baseUrl = url;
-
-      this.previews.set([...previews]);
-    });
+  async #isPortOpen(port: number): Promise<boolean> {
+    try {
+      const result = await executeCommand(`curl -s --connect-timeout 1 http://localhost:${port} > /dev/null && echo "open" || echo "closed"`);
+      return result.stdout.trim() === 'open';
+    } catch {
+      return false;
+    }
   }
 
   /**
    * Starts a proxy server for the given source port.
    *
-   * Proxy servers are used so that each time a preview is shown on screen,
-   * each preview has a different origin. This helps when testing apps with
-   * auth with multiple users.
+   * For E2B, we create a simple tunnel to the source port.
    */
   async startProxy(sourcePort: number): Promise<{ proxyPort: number; proxyUrl: string }> {
     const targetPort = PROXY_PORT_RANGE_START + this.#proxies.size;
     const { promise: onStart, resolve: start } = withResolvers<{ proxyUrl: string }>();
 
-    const proxyLogger = createScopedLogger(`Proxy ${targetPort} → ${sourcePort}`);
+    const proxyLogger = createScopedLogger(`E2B Proxy ${targetPort} → ${sourcePort}`);
 
     const proxyState: ProxyState = {
       sourcePort,
       start,
       stop() {
-        // This should never happen since the external users don’t get access to
-        // the ProxyState object before `startProxy` returns (unless they guess
-        // the port number)
+        // This should never happen since the external users don't get access to
+        // the ProxyState object before `startProxy` returns
         throw new Error('Proxy not started');
       },
     };
     this.#proxies.set(targetPort, proxyState);
 
-    // Start the HTTP + HMR WebSocket proxy
-    const webcontainer = await this.#webcontainer;
+    try {
+      // Create a simple proxy using socat or nc
+      const proxyCommand = `socat TCP-LISTEN:${targetPort},fork TCP:localhost:${sourcePort}`;
+      const result = await executeCommand(`nohup ${proxyCommand} > /dev/null 2>&1 & echo $!`);
+      const processId = result.stdout.trim();
+      
+      proxyState.processId = processId;
+      proxyState.stop = async () => {
+        proxyLogger.info('Stopping E2B proxy');
+        if (processId) {
+          await executeCommand(`kill ${processId}`);
+        }
+      };
 
-    const proxyScriptLocation = '/tmp/previewProxy.cjs';
-    // webcontainer.writeFile seems incapable of writing to /tmp/foo
-    // so use sh instead. It's important that this string has no
-    // single quote characters ' in it so this naive escaping works.
-    const writeProxyProcess = await webcontainer.spawn('sh', [
-      '-c',
-      `echo '${PROXY_SERVER_SOURCE}' > ${proxyScriptLocation}`,
-    ]);
-    await writeProxyProcess.exit;
-    const proxyProcess = await webcontainer.spawn('node', [
-      proxyScriptLocation,
-      sourcePort.toString(),
-      targetPort.toString(),
-    ]);
+      // Simulate port opening for the proxy
+      setTimeout(() => {
+        const proxyUrl = `http://localhost:${targetPort}`;
+        start({ proxyUrl });
+        proxyLogger.info('E2B proxy started:', proxyUrl);
+      }, 1000);
 
-    proxyState.stop = () => {
-      proxyLogger.info('Stopping proxy');
-      proxyProcess.kill();
-    };
-
-    proxyProcess.output.pipeTo(
-      new WritableStream({
-        write(data) {
-          proxyLogger.info(data);
-        },
-      }),
-    );
-
-    const { proxyUrl } = await onStart;
-    return { proxyPort: targetPort, proxyUrl };
+      const { proxyUrl } = await onStart;
+      return { proxyPort: targetPort, proxyUrl };
+    } catch (error) {
+      proxyLogger.error('Failed to start proxy:', error);
+      // Fallback: return the source port as proxy
+      const proxyUrl = `http://localhost:${sourcePort}`;
+      setTimeout(() => start({ proxyUrl }), 100);
+      const { proxyUrl: fallbackUrl } = await onStart;
+      return { proxyPort: sourcePort, proxyUrl: fallbackUrl };
+    }
   }
 
   /**
    * Called when a proxy server is no longer used and it can be released.
    */
-  stopProxy(proxyPort: number) {
+  async stopProxy(proxyPort: number) {
     const proxy = this.#proxies.get(proxyPort);
     if (!proxy) {
       throw new Error(`Proxy for port ${proxyPort} not found`);
     }
 
-    proxy.stop();
+    if (typeof proxy.stop === 'function') {
+      await proxy.stop();
+    }
+    this.#proxies.delete(proxyPort);
   }
 
   async requestAnyScreenshot(timeout = 30000): Promise<string> {
@@ -180,10 +205,11 @@ export class PreviewsStore {
         window.addEventListener('message', handleMessage);
         cleanup = () => window.removeEventListener('message', handleMessage);
       });
+    
     try {
       iframe.contentWindow?.postMessage(
         {
-          type: 'chefPreviewRequest',
+          type: 'zapdevPreviewRequest',
           request: 'screenshot',
         },
         targetOrigin,
@@ -195,5 +221,20 @@ export class PreviewsStore {
     } finally {
       cleanup?.();
     }
+  }
+
+  destroy() {
+    if (this.#portCheckInterval) {
+      clearInterval(this.#portCheckInterval);
+      this.#portCheckInterval = null;
+    }
+
+    // Stop all proxies
+    for (const [port, proxy] of this.#proxies.entries()) {
+      if (typeof proxy.stop === 'function') {
+        proxy.stop();
+      }
+    }
+    this.#proxies.clear();
   }
 }

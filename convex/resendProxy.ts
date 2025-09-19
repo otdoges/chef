@@ -83,7 +83,7 @@ export const resendProxy = httpAction(async (ctx, req) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `Chef Notifications <${deploymentName}@convexchef.app>`,
+      from: `Zapdev Notifications <${deploymentName}@convexzapdev.app>`,
       to: recipientEmail,
       subject: body.subject,
       html: body.html,

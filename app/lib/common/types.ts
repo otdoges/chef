@@ -1,12 +1,13 @@
 import type { ToolCallUnion } from 'ai';
-import type { npmInstallToolParameters } from 'chef-agent/tools/npmInstall';
-import type { editToolParameters } from 'chef-agent/tools/edit';
-import type { addEnvironmentVariablesParameters } from 'chef-agent/tools/addEnvironmentVariables';
-import type { viewParameters } from 'chef-agent/tools/view';
+import type { npmInstallToolParameters } from 'zapdev-agent/tools/npmInstall';
+import type { editToolParameters } from 'zapdev-agent/tools/edit';
+import type { addEnvironmentVariablesParameters } from 'zapdev-agent/tools/addEnvironmentVariables';
+import type { viewParameters } from 'zapdev-agent/tools/view';
 import type { ActionStatus } from '~/lib/runtime/action-runner';
-import type { lookupDocsParameters } from 'chef-agent/tools/lookupDocs';
-import type { ConvexToolSet, EmptyArgs } from 'chef-agent/types';
-import type { getConvexDeploymentNameParameters } from 'chef-agent/tools/getConvexDeploymentName';
+import type { lookupDocsParameters } from 'zapdev-agent/tools/lookupDocs';
+import type { firecrawlToolParameters } from 'zapdev-agent/tools/firecrawl';
+import type { ConvexToolSet, EmptyArgs } from 'zapdev-agent/types';
+import type { getConvexDeploymentNameParameters } from 'zapdev-agent/tools/getConvexDeploymentName';
 
 type ConvexToolCall = ToolCallUnion<ConvexToolSet>;
 
@@ -36,6 +37,11 @@ type ConvexToolResult =
   | {
       toolName: 'lookupDocs';
       args: typeof lookupDocsParameters;
+      result: string;
+    }
+  | {
+      toolName: 'firecrawl';
+      args: typeof firecrawlToolParameters;
       result: string;
     }
   | {

@@ -9,7 +9,7 @@
     "@ai-sdk/xai": "^1.2.13",
     "async-mutex": "^0.5.0",
     "braintrust": "^0.0.199",
-    "chef-agent": "workspace:*",
+    "zapdev-agent": "workspace:*",
     "portfinder": "^1.0.36",
     "typescript": "^5.4.2",
     "walkdir": "^0.4.1"

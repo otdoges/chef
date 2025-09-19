@@ -1,6 +1,5 @@
-import type { DirEnt } from '@webcontainer/api';
-import { WORK_DIR } from 'chef-agent/constants';
-import type { WebContainer } from '@webcontainer/api';
+import { WORK_DIR } from 'zapdev-agent/constants';
+import { listFiles, readFile } from '~/lib/e2b';
 
 export const filesToArtifacts = (files: { [path: string]: { content: string } }, id: string): string => {
   return `
@@ -30,42 +29,20 @@ export function workDirRelative(absPath: string) {
   return absPath.slice(withSlash.length);
 }
 
-async function readDir(container: WebContainer, relPath: string): Promise<DirEnt<string>[]> {
-  const children = await container.fs.readdir(relPath, {
-    withFileTypes: true,
-  });
-  children.sort((a, b) => {
-    // Directories first, then files
-    if (a.isDirectory() && !b.isDirectory()) {
-      return -1;
-    }
-    if (!a.isDirectory() && b.isDirectory()) {
-      return 1;
-    }
-    return a.name.localeCompare(b.name);
-  });
-  return children;
-}
-
 export async function readPath(
-  container: WebContainer,
   relPath: string,
-): Promise<{ type: 'directory'; children: DirEnt<string>[] } | { type: 'file'; content: string; isBinary: boolean }> {
-  // There isn't a way to stat a path in the container, so try reading
-  // it as a directory first.
+): Promise<{ type: 'directory'; children: Array<{ name: string; type: 'file' | 'directory' }> } | { type: 'file'; content: string; isBinary: boolean }> {
   try {
-    const children = await readDir(container, relPath);
+    const children = await listFiles(relPath);
     return { type: 'directory', children };
   } catch (e: any) {
-    if (typeof e.message !== 'string') {
-      throw e;
-    }
-    if (!e.message.startsWith('ENOTDIR')) {
-      throw e;
-    }
     // If we made it here, the path isn't a directory, so let's
     // try it as a file below.
+    try {
+      const content = await readFile(relPath);
+      return { type: 'file', content, isBinary: false };
+    } catch (fileError) {
+      throw e; // Throw the original directory error
+    }
   }
-  const content = await container.fs.readFile(relPath, 'utf-8');
-  return { type: 'file', content, isBinary: false };
 }

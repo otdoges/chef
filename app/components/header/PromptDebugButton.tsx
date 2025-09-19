@@ -21,7 +21,7 @@ export function PromptDebugButton() {
 
   const [isActivelyCheckingForAdmin, setIsActivelyCheckingForAdmin] = useState(false);
 
-  (window as any).chefAssertAdmin = () => {
+  (window as any).zapdevAssertAdmin = () => {
     setIsActivelyCheckingForAdmin(true);
   };
 

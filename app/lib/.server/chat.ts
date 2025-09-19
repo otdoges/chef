@@ -1,5 +1,5 @@
 import { type ActionFunctionArgs } from '@vercel/remix';
-import { createScopedLogger } from 'chef-agent/utils/logger';
+import { createScopedLogger } from 'zapdev-agent/utils/logger';
 import { convexAgent } from '~/lib/.server/llm/convex-agent';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { BatchSpanProcessor, WebTracerProvider } from '@opentelemetry/sdk-trace-web';
@@ -8,7 +8,7 @@ import { checkTokenUsage, recordUsage } from '~/lib/.server/usage';
 import { disabledText, noTokensText } from '~/lib/convexUsage';
 import type { ModelProvider } from '~/lib/.server/llm/provider';
 import { getEnv } from '~/lib/.server/env';
-import type { PromptCharacterCounts } from 'chef-agent/ChatContextManager';
+import type { PromptCharacterCounts } from 'zapdev-agent/ChatContextManager';
 
 type Messages = Message[];
 
@@ -124,16 +124,9 @@ export async function chatAction({ request }: ActionFunctionArgs) {
 
   let userApiKey: string | undefined;
   if (useUserApiKey) {
-    if (body.modelProvider === 'Anthropic' || body.modelProvider === 'Bedrock') {
-      userApiKey = body.userApiKey?.value;
-      body.modelProvider = 'Anthropic';
-    } else if (body.modelProvider === 'OpenAI') {
-      userApiKey = body.userApiKey?.openai;
-    } else if (body.modelProvider === 'XAI') {
-      userApiKey = body.userApiKey?.xai;
-    } else {
-      userApiKey = body.userApiKey?.google;
-    }
+    // All models now use OpenRouter
+    userApiKey = body.userApiKey?.openrouter || body.userApiKey?.value; // Support legacy 'value' field
+    body.modelProvider = 'OpenRouter';
 
     if (!userApiKey) {
       return new Response(
@@ -217,20 +210,13 @@ export async function chatAction({ request }: ActionFunctionArgs) {
 // Returns whether or not the user has an API key set for a given provider
 function hasApiKeySetForProvider(
   userApiKey:
-    | { preference: 'always' | 'quotaExhausted'; value?: string; openai?: string; xai?: string; google?: string }
+    | { preference: 'always' | 'quotaExhausted'; value?: string; openrouter?: string; openai?: string; xai?: string; google?: string }
     | undefined,
   provider: ModelProvider,
 ) {
-  switch (provider) {
-    case 'Anthropic':
-      return userApiKey?.value !== undefined;
-    case 'OpenAI':
-      return userApiKey?.openai !== undefined;
-    case 'XAI':
-      return userApiKey?.xai !== undefined;
-    case 'Google':
-      return userApiKey?.google !== undefined;
-    default:
-      return false;
+  // All models now use OpenRouter
+  if (provider === 'OpenRouter') {
+    return !!(userApiKey?.openrouter || userApiKey?.value); // Support legacy 'value' field
   }
+  return false;
 }

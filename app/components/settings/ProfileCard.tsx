@@ -2,13 +2,13 @@ import { useStore } from '@nanostores/react';
 import { profileStore } from '~/lib/stores/profile';
 import { ExitIcon, ExternalLinkIcon, PersonIcon } from '@radix-ui/react-icons';
 import { LoadingTransition } from '@ui/Loading';
-import { useAuth } from '@workos-inc/authkit-react';
+import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 
 export function ProfileCard() {
   const profile = useStore(profileStore);
-  const { signOut } = useAuth();
+  const { signOut } = useClerkAuth();
   const handleLogout = () => {
-    signOut({ returnTo: window.location.origin });
+    void signOut();
   };
 
   return (

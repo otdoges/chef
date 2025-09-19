@@ -13,7 +13,7 @@ import {
   prepareMessageHistory,
   waitForNewMessages,
 } from './messages';
-import { createScopedLogger } from 'chef-agent/utils/logger';
+import { createScopedLogger } from 'zapdev-agent/utils/logger';
 import { useStore } from '@nanostores/react';
 import { subchatIndexStore, waitForSubchatIndexChanged } from '~/lib/stores/subchats';
 import { api } from '@convex/_generated/api';

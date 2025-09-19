@@ -1,16 +1,16 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://chef.convex.dev/github-header-dark.svg">
-    <img alt="Chef by Convex'" src="https://chef.convex.dev/github-header-light.svg" width="600">
+    <source media="(prefers-color-scheme: dark)" srcset="https://zapdev.convex.dev/github-header-dark.svg">
+    <img alt="Zapdev by Convex'" src="https://zapdev.convex.dev/github-header-light.svg" width="600">
   </picture>
 </p>
 
-[Chef](https://chef.convex.dev) is the only AI app builder that knows backend. It builds full-stack web apps with a built-in database, zero config auth, file uploads,
-real-time UIs, and background workflows. If you want to check out the secret sauce that powers Chef, you can view or download the system prompt [here](https://github.com/get-convex/chef/releases/latest).
+[Zapdev](https://zapdev.convex.dev) is the only AI app builder that knows backend. It builds full-stack web apps with a built-in database, zero config auth, file uploads,
+real-time UIs, and background workflows. If you want to check out the secret sauce that powers Zapdev, you can view or download the system prompt [here](https://github.com/get-convex/zapdev/releases/latest).
 
-Chef's capabilities are enabled by being built on top of [Convex](https://convex.dev), the open-source reactive database designed to make life easy for web app developers. The "magic" in Chef is just the fact that it's using Convex's APIs, which are an ideal fit for codegen.
+Zapdev's capabilities are enabled by being built on top of [Convex](https://convex.dev), the open-source reactive database designed to make life easy for web app developers. The "magic" in Zapdev is just the fact that it's using Convex's APIs, which are an ideal fit for codegen.
 
-Development of the Chef is led by the Convex team. We
+Development of the Zapdev is led by the Convex team. We
 [welcome bug fixes](./CONTRIBUTING.md) and
 [love receiving feedback](https://discord.gg/convex).
 
@@ -18,22 +18,22 @@ This project is a fork of the `stable` branch of [bolt.diy](https://github.com/s
 
 ## Getting Started
 
-Visit our [documentation](https://docs.convex.dev/chef) to learn more about Chef and check out our prompting [guide](https://stack.convex.dev/chef-cookbook-tips-working-with-ai-app-builders).
+Visit our [documentation](https://docs.convex.dev/zapdev) to learn more about Zapdev and check out our prompting [guide](https://stack.convex.dev/zapdev-cookbook-tips-working-with-ai-app-builders).
 
-The easiest way to build with Chef is through our hosted [webapp](https://chef.convex.dev), which includes a generous free tier. If you want to
-run Chef locally, you can follow the guide below.
+The easiest way to build with Zapdev is through our hosted [webapp](https://zapdev.convex.dev), which includes a generous free tier. If you want to
+run Zapdev locally, you can follow the guide below.
 
 ### Running Locally
 
-Note: This will use the hosted Convex control plane to provision Convex projects. However, Chef tokens used in this enviroment will not count towards usage in your Convex account.
+Note: This will use the hosted Convex control plane to provision Convex projects. However, Zapdev tokens used in this enviroment will not count towards usage in your Convex account.
 
 **1. Clone the project**
 
 Clone the GitHub respository and `cd` into the directory by running the following commands:
 
 ```bash
-git clone https://github.com/get-convex/chef.git
-cd chef
+git clone https://github.com/get-convex/zapdev.git
+cd zapdev
 ```
 
 **2. Set up local environment**
@@ -51,9 +51,9 @@ npx convex dev --once # follow the steps to create a Convex project in your team
 
 Note: `nvm` only works on Mac and Linux. If you are using Windows, you may have to find an alternative.
 
-**3. Set up Chef OAuth application**
+**3. Set up Zapdev OAuth application**
 
-Go to the Convex [dashboard](https://dashboard.convex.dev/team/settings/applications/oauth-apps) and create an OAuth application. The team you use to create the application will be the only team you can sign-in with on local Chef. Redirect URIs will not matter, but you can set one to http://127.0.0.1:5173 (or whatever port you’ll run the Chef UI on) so that the form can be submitted.
+Go to the Convex [dashboard](https://dashboard.convex.dev/team/settings/applications/oauth-apps) and create an OAuth application. The team you use to create the application will be the only team you can sign-in with on local Zapdev. Redirect URIs will not matter, but you can set one to http://127.0.0.1:5173 (or whatever port you’ll run the Zapdev UI on) so that the form can be submitted.
 
 **4. Set up Convex deployment**
 
@@ -63,23 +63,29 @@ Use `npx convex dashboard` to open the Convex [dashboard](https://dashboard.conv
 BIG_BRAIN_HOST=https://api.convex.dev
 CONVEX_OAUTH_CLIENT_ID=<value from oauth setup>
 CONVEX_OAUTH_CLIENT_SECRET=<value from oauth setup>
-WORKOS_CLIENT_ID=<value from .env.development>
+CLERK_PUBLISHABLE_KEY=<value from Clerk dashboard>
+CLERK_JWT_ISSUER_DOMAIN=<your-domain>.clerk.accounts.dev
 ```
 
 **5. Add API keys for model providers**
 
-Add any of the following API keys in your `.env.local` to enable code generation:
+Add the following API keys in your `.env.local` to enable code generation:
 
 ```env
-ANTHROPIC_API_KEY=<your api key>
-GOOGLE_API_KEY=<your api key>
-OPENAI_API_KEY=<your api key>
-XAI_API_KEY=<your api key>
+# OpenRouter provides access to 100+ AI models through a single API key
+OPENROUTER_API_KEY=<your openrouter api key>
+
+# E2B provides cloud-based code execution environments
+E2B_API_KEY=<your e2b api key>
 ```
 
-Note: You can also add your own API keys through the Chef settings page.
+Get your API keys:
+- OpenRouter: Visit [openrouter.ai/keys](https://openrouter.ai/keys) to get your API key
+- E2B: Visit [e2b.dev](https://e2b.dev) to get your API key
 
-**6. Run Chef backend and frontend**
+Note: You can also add your own OpenRouter API key through the Zapdev settings page.
+
+**6. Run Zapdev backend and frontend**
 
 Run the following commands in your terminal:
 
@@ -90,9 +96,9 @@ pnpm run dev
 npx convex dev
 ```
 
-Congratulations, you now have Chef running locally! You can log in to Chef with your existing Convex account.
+Congratulations, you now have Zapdev running locally! You can log in to Zapdev with your existing Convex account.
 
-Note: Chef is accessible at http://127.0.0.1:{port}/ and will not work properly on http://localhost:{port}/.
+Note: Zapdev is accessible at http://127.0.0.1:{port}/ and will not work properly on http://localhost:{port}/.
 
 ## Repository Layout
 
@@ -102,12 +108,12 @@ Note: Chef is accessible at http://127.0.0.1:{port}/ and will not work properly 
   - `lib/` contains client-side logic for syncing local state with the server
   - `routes/` defines some client and server routes
 
-- `chef-agent/` handles the agentic loop by injecting system prompts, defining tools, and calling out to model providers.
+- `zapdev-agent/` handles the agentic loop by injecting system prompts, defining tools, and calling out to model providers.
 
-- `chefshot/` defines a CLI interface for interacting with the Chef webapp.
+- `zapdevshot/` defines a CLI interface for interacting with the Zapdev webapp.
 
 - `convex/` contains the database that stores chats and user metadata.
 
-- `template/` contains the template that we use to start all Chef projects.
+- `template/` contains the template that we use to start all Zapdev projects.
 
-- `test-kitchen/` contains a test harness for the Chef agent loop.
+- `test-kitchen/` contains a test harness for the Zapdev agent loop.

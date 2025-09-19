@@ -1,31 +1,31 @@
 import { atom, map, type ReadableAtom, type WritableAtom } from 'nanostores';
-import type { EditorDocument, ScrollPosition } from 'chef-agent/types';
+import type { EditorDocument, ScrollPosition } from 'zapdev-agent/types';
 import { ActionRunner } from '~/lib/runtime/action-runner';
-import type { ActionCallbackData, ArtifactCallbackData } from 'chef-agent/message-parser';
-import { webcontainer } from '~/lib/webcontainer';
+import type { ActionCallbackData, ArtifactCallbackData } from 'zapdev-agent/message-parser';
+import { codeInterpreter } from '~/lib/e2b';
 import type { ITerminal, TerminalInitializationOptions } from '~/types/terminal';
-import { unreachable } from 'chef-agent/utils/unreachable';
+import { unreachable } from 'zapdev-agent/utils/unreachable';
 import { EditorStore } from './editor';
 import { FilesStore } from './files';
-import type { FileMap } from 'chef-agent/types';
-import type { AbsolutePath } from 'chef-agent/utils/workDir';
-import { getAbsolutePath, getRelativePath } from 'chef-agent/utils/workDir';
+import type { FileMap } from 'zapdev-agent/types';
+import type { AbsolutePath } from 'zapdev-agent/utils/workDir';
+import { getAbsolutePath, getRelativePath } from 'zapdev-agent/utils/workDir';
 import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
 import JSZip from 'jszip';
 import fileSaver from 'file-saver';
-import { path } from 'chef-agent/utils/path';
+import { path } from 'zapdev-agent/utils/path';
 import { description } from './description';
 import { createSampler } from '~/utils/sampler';
 import type { ActionAlert } from '~/types/actions';
-import type { WebContainer } from '@webcontainer/api';
+import type { CodeInterpreter } from '@e2b/code-interpreter';
 import { withResolvers } from '~/utils/promises';
 import type { Artifacts } from './artifacts';
-import { WORK_DIR } from 'chef-agent/constants';
-import { parsePartId, type PartId, type MessageId } from 'chef-agent/partId.js';
+import { WORK_DIR } from 'zapdev-agent/constants';
+import { parsePartId, type PartId, type MessageId } from 'zapdev-agent/partId.js';
 import { generateReadmeContent } from '~/lib/download/readmeContent';
 import { setupMjsContent } from '~/lib/download/setupMjsContent';
-import type { ConvexProject } from 'chef-agent/types';
+import type { ConvexProject } from 'zapdev-agent/types';
 import { cursorRulesContent } from '~/lib/download/cursorRulesContent';
 import type { ConvexToolName } from '~/lib/common/types';
 
@@ -44,10 +44,10 @@ type ArtifactUpdateState = Pick<ArtifactState, 'title' | 'closed'>;
 export type WorkbenchViewType = 'code' | 'diff' | 'preview' | 'dashboard';
 
 export class WorkbenchStore {
-  #previewsStore = new PreviewsStore(webcontainer);
-  #filesStore = new FilesStore(webcontainer);
+  #previewsStore = new PreviewsStore(codeInterpreter);
+  #filesStore = new FilesStore(codeInterpreter);
   #editorStore = new EditorStore(this.#filesStore);
-  #terminalStore = new TerminalStore(webcontainer);
+  #terminalStore = new TerminalStore(codeInterpreter);
   #toolCalls: Map<string, PromiseWithResolvers<{ result: string }> & { done: boolean }> = new Map();
 
   #reloadedParts = import.meta.hot?.data.reloadedParts ?? new Set<string>();
@@ -140,7 +140,7 @@ export class WorkbenchStore {
     return this.#filesStore.userWrites;
   }
 
-  prewarmWorkdir(container: WebContainer) {
+  prewarmWorkdir(container: CodeInterpreter) {
     return this.#filesStore.prewarmWorkdir(container);
   }
 
@@ -394,7 +394,7 @@ export class WorkbenchStore {
       title,
       closed: false,
       type,
-      runner: new ActionRunner(webcontainer, this.boltTerminal, {
+      runner: new ActionRunner(codeInterpreter, this.boltTerminal, {
         onAlert: (alert) => {
           if (this.#reloadedParts.has(partId)) {
             return;
@@ -486,8 +486,8 @@ export class WorkbenchStore {
     }
 
     if (data.action.type === 'file') {
-      const wc = await webcontainer;
-      const fullPath = path.join(wc.workdir, data.action.filePath);
+      const interpreter = await codeInterpreter;
+      const fullPath = path.join(WORK_DIR, data.action.filePath);
 
       if (this.selectedFile.value !== fullPath) {
         // Consider focusing the streaming tab so user can see code flowing in.
@@ -585,12 +585,12 @@ export class WorkbenchStore {
       }
     }
 
-    // Add a README.md file specific to Chef here, but don't clobber an existing one
+    // Add a README.md file specific to Zapdev here, but don't clobber an existing one
     const readmeContent = generateReadmeContent(
       description.value ?? 'project',
       args.convexProject?.deploymentName ?? null,
     );
-    const readmePath = hasReadme ? `CHEF_README.md` : 'README.md';
+    const readmePath = hasReadme ? `ZAPDEV_README.md` : 'README.md';
     zip.file(readmePath, readmeContent);
     if (!hasSetupMjs) {
       zip.file('setup.mjs', setupMjsContent);

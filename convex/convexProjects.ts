@@ -90,7 +90,7 @@ export const startProvisionConvexProject = mutation({
     projectInitParams: v.optional(
       v.object({
         teamSlug: v.string(),
-        workosAccessToken: v.string(),
+      workosAccessToken: v.optional(v.string()),
       }),
     ),
   },
@@ -106,7 +106,7 @@ export async function startProvisionConvexProjectHelper(
     chatId: string;
     projectInitParams?: {
       teamSlug: string;
-      workosAccessToken: string;
+      workosAccessToken?: string;
     };
   },
 ): Promise<void> {
@@ -131,7 +131,7 @@ export async function startProvisionConvexProjectHelper(
   await ctx.scheduler.runAfter(0, internal.convexProjects.connectConvexProjectForOauth, {
     sessionId: args.sessionId,
     chatId: args.chatId,
-    accessToken: args.projectInitParams.workosAccessToken,
+    accessToken: args.projectInitParams.workosAccessToken ?? "",
     teamSlug: args.projectInitParams.teamSlug,
   });
   const jobId = await ctx.scheduler.runAfter(CHECK_CONNECTION_DEADLINE_MS, internal.convexProjects.checkConnection, {
@@ -257,7 +257,7 @@ async function _connectConvexProjectForMember(
     await new Promise((resolve) => setTimeout(resolve, WAIT_TIME_MS));
     timeElapsed += WAIT_TIME_MS;
   }
-  projectName = projectName ?? "My Project (Chef)";
+  projectName = projectName ?? "My Project (Zapdev)";
   const response = await fetch(`${bigBrainHost}/api/create_project`, {
     method: "POST",
     headers: {

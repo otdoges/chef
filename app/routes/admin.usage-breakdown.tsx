@@ -1,5 +1,5 @@
 import { useTeamsInitializer } from '~/lib/stores/startup/useTeamsInitializer';
-import { ChefAuthProvider } from '~/components/chat/ChefAuthWrapper';
+import { ZapdevAuthProvider } from '~/components/chat/ZapdevAuthWrapper';
 import type { MetaFunction } from '@vercel/remix';
 import { ArrowLeftIcon } from '@radix-ui/react-icons';
 import { useState, useEffect } from 'react';
@@ -10,20 +10,20 @@ import { UsageBreakdownView } from '~/components/debug/UsageBreakdownView';
 import { getConvexSiteUrl } from '~/lib/convexSiteUrl';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Prompt Debug | Chef Admin' }];
+  return [{ title: 'Prompt Debug | Zapdev Admin' }];
 };
 
 export default function PromptDebug() {
   useTeamsInitializer();
 
   return (
-    <ChefAuthProvider redirectIfUnauthenticated={true}>
+    <ZapdevAuthProvider redirectIfUnauthenticated={true}>
       <ClientOnly>
         {() => {
           return <UsageBreakdownContent />;
         }}
       </ClientOnly>
-    </ChefAuthProvider>
+    </ZapdevAuthProvider>
   );
 }
 

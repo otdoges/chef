@@ -2,16 +2,25 @@ import { captureRemixErrorBoundaryError, captureMessage } from '@sentry/remix';
 import { useStore } from '@nanostores/react';
 import type { LinksFunction } from '@vercel/remix';
 import { json } from '@vercel/remix';
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData, useRouteError } from '@remix-run/react';
+import {
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+  useMatches,
+  useRouteLoaderData,
+  useRouteError,
+} from '@remix-run/react';
 import { themeStore } from './lib/stores/theme';
-import { stripIndents } from 'chef-agent/utils/stripIndent';
+import { stripIndents } from 'zapdev-agent/utils/stripIndent';
 import { createHead } from 'remix-island';
 import { useEffect, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ClientOnly } from 'remix-utils/client-only';
-import { AuthKitProvider, useAuth } from '@workos-inc/authkit-react';
-import { ConvexProviderWithAuthKit } from '@convex-dev/workos';
+import { ClerkProvider, useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { ConvexProviderWithClerk } from 'convex/react-clerk';
 import { ConvexReactClient } from 'convex/react';
 import globalStyles from './styles/index.css?url';
 import '@convex-dev/design-system/styles/shared.css';
@@ -27,11 +36,9 @@ export async function loader() {
   // These environment variables are available in the client (they aren't secret).
   // eslint-disable-next-line local/no-direct-process-env
   const CONVEX_URL = process.env.VITE_CONVEX_URL || globalThis.process.env.CONVEX_URL!;
-  const CONVEX_OAUTH_CLIENT_ID = globalThis.process.env.CONVEX_OAUTH_CLIENT_ID!;
-  const WORKOS_REDIRECT_URI =
-    globalThis.process.env.VITE_WORKOS_REDIRECT_URI || globalThis.process.env.VERCEL_BRANCH_URL!;
+  const CLERK_PUBLISHABLE_KEY = globalThis.process.env.CLERK_PUBLISHABLE_KEY!;
   return json({
-    ENV: { CONVEX_URL, CONVEX_OAUTH_CLIENT_ID, WORKOS_REDIRECT_URI },
+    ENV: { CONVEX_URL, CLERK_PUBLISHABLE_KEY },
   });
 }
 
@@ -138,24 +145,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <AuthKitProvider
-        clientId={import.meta.env.VITE_WORKOS_CLIENT_ID}
-        redirectUri={globalThis.process.env.WORKOS_REDIRECT_URI}
-        apiHostname={import.meta.env.VITE_WORKOS_API_HOSTNAME}
-      >
-        <ClientOnly>
-          {() => {
-            return (
-              <DndProvider backend={HTML5Backend}>
-                <ConvexProviderWithAuthKit client={convex} useAuth={useAuth}>
-                  {children}
-                </ConvexProviderWithAuthKit>
-              </DndProvider>
-            );
-          }}
-        </ClientOnly>
-      </AuthKitProvider>
-
+      <ClientOnly>
+        {() => (
+          <ClerkProvider
+            key="clerk-provider"
+            publishableKey={
+              import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || (loaderData as any)?.ENV.CLERK_PUBLISHABLE_KEY
+            }
+          >
+            <DndProvider backend={HTML5Backend}>
+              <ConvexProviderWithClerk client={convex} useAuth={useClerkAuth}>
+                {children}
+              </ConvexProviderWithClerk>
+            </DndProvider>
+          </ClerkProvider>
+        )}
+      </ClientOnly>
       <ScrollRestoration />
       <Scripts />
     </>
@@ -169,6 +174,27 @@ export const ErrorBoundary = () => {
 };
 
 export default function App() {
+  const matches = useMatches();
+  const isShareRoute = matches.some((match) => match.id.startsWith('routes/share'));
+  const isCreateRoute = matches.some((match) => match.id.startsWith('routes/create'));
+
+  // Debug logging
+  console.log(
+    '🔍 Route matches:',
+    matches.map((m) => ({ id: m.id, pathname: m.pathname })),
+  );
+  console.log(
+    '🔍 All route IDs:',
+    matches.map((m) => m.id),
+  );
+  console.log('🔍 Is share route?', isShareRoute);
+  console.log('🔍 Is create route?', isCreateRoute);
+  console.log('🔍 Will skip Layout?', isShareRoute || isCreateRoute);
+
+  if (isShareRoute || isCreateRoute) {
+    return <Outlet />;
+  }
+
   return (
     <Layout>
       <Outlet />

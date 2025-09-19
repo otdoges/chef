@@ -1,14 +1,9 @@
 import { IGNORED_RELATIVE_PATHS } from '~/utils/constants';
-import { webcontainer } from './webcontainer';
+import { codeInterpreter } from '~/lib/e2b';
 
 export async function buildUncompressedSnapshot(): Promise<Uint8Array> {
-  const container = await webcontainer;
-  const start = Date.now();
-  const snapshot = await container.export('.', {
-    excludes: IGNORED_RELATIVE_PATHS,
-    format: 'binary',
-  });
-  const end = Date.now();
-  console.log(`Built snapshot in ${end - start}ms`);
-  return snapshot;
+  // TODO: Implement snapshot functionality for E2B
+  // For now, return empty snapshot as this feature needs E2B-specific implementation
+  console.warn('buildUncompressedSnapshot not yet implemented for E2B');
+  return new Uint8Array();
 }

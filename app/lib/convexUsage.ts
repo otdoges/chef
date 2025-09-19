@@ -28,7 +28,7 @@ export function renderTokenCount(tokens: number) {
 export function noTokensText(centitokensUsed: number, centitokensQuota: number) {
   return (
     `No remaining tokens available. ` +
-    `Please upgrade to a paid plan or add your own API key at chef.convex.dev/settings to continue. ` +
+    `Please upgrade to a paid plan or add your own API key at zapdev.convex.dev/settings to continue. ` +
     `Used ${renderTokenCount(Math.floor(centitokensUsed / 100))} of ${renderTokenCount(Math.floor(centitokensQuota / 100))}.`
   );
 }

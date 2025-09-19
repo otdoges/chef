@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import JSZip from 'jszip';
-import { webcontainer } from '~/lib/webcontainer';
-import type { WebContainer } from '@webcontainer/api';
+import { codeInterpreter, executeCommand, listFiles, readFile } from '~/lib/e2b';
 import { useStore } from '@nanostores/react';
 import { convexProjectStore } from '~/lib/stores/convexProject';
 import { getFileUpdateCounter, useFileUpdateCounter } from '~/lib/stores/fileUpdateCounter';
 import { toast } from 'sonner';
-import { streamOutput } from '~/utils/process';
 import { Spinner } from '@ui/Spinner';
 import { CheckIcon, ExternalLinkIcon, RocketIcon, UpdateIcon } from '@radix-ui/react-icons';
 import { Button } from '@ui/Button';
@@ -36,17 +34,17 @@ export function DeployButton() {
   const sessionId = useConvexSessionId();
   const recordDeploy = useMutation(api.deploy.recordDeploy);
 
-  const addFilesToZip = async (container: WebContainer, zip: JSZip, basePath: string, currentPath: string = '') => {
+  const addFilesToZip = async (zip: JSZip, basePath: string, currentPath: string = '') => {
     const fullPath = currentPath ? `${basePath}/${currentPath}` : basePath;
-    const entries = await container.fs.readdir(fullPath, { withFileTypes: true });
+    const entries = await listFiles(fullPath);
 
     for (const entry of entries) {
       const entryPath = currentPath ? `${currentPath}/${entry.name}` : entry.name;
 
-      if (entry.isDirectory()) {
-        await addFilesToZip(container, zip, basePath, entryPath);
-      } else if (entry.isFile()) {
-        const content = await container.fs.readFile(`${basePath}/${entryPath}`);
+      if (entry.type === 'directory') {
+        await addFilesToZip(zip, basePath, entryPath);
+      } else if (entry.type === 'file') {
+        const content = await readFile(`${basePath}/${entryPath}`);
         zip.file(entryPath, content);
       }
     }
@@ -55,18 +53,17 @@ export function DeployButton() {
   const handleDeploy = async () => {
     try {
       setStatus({ type: 'building' });
-      const container = await webcontainer;
+      await codeInterpreter;
 
       // Run the build command
-      const buildProcess = await container.spawn('vite', ['build', '--mode', 'development']);
-      const { output, exitCode } = await streamOutput(buildProcess);
+      const { stdout, stderr, exitCode } = await executeCommand('vite build --mode development');
       if (exitCode !== 0) {
-        throw new Error(`Build failed: ${output}`);
+        throw new Error(`Build failed: ${stderr || stdout}`);
       }
 
       setStatus({ type: 'zipping' });
       const zip = new JSZip();
-      await addFilesToZip(container, zip, 'dist');
+      await addFilesToZip(zip, 'dist');
       const zipBlob = await zip.generateAsync({ type: 'blob' });
 
       setStatus({ type: 'deploying' });

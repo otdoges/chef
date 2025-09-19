@@ -6,7 +6,7 @@
  * Server-side functions accept either, so we call their union a `chatId`.
  */
 import { useStore } from '@nanostores/react';
-import { setChefDebugProperty } from 'chef-agent/utils/chefDebug';
+import { setZapdevDebugProperty } from 'zapdev-agent/utils/zapdevDebug';
 import { atom, computed, map } from 'nanostores';
 
 /*
@@ -17,11 +17,10 @@ const pageLoadChatId = atom<string | undefined>(undefined);
 
 export function setPageLoadChatId(chatId: string) {
   const existing = pageLoadChatId.get();
-  if (existing !== undefined && existing !== chatId) {
-    throw new Error(`pageLoadChatId already set to ${existing} but trying to set to ${chatId}`);
+  if (existing === undefined) {
+    setZapdevDebugProperty('chatInitialId', chatId);
+    pageLoadChatId.set(chatId);
   }
-  setChefDebugProperty('chatInitialId', chatId);
-  pageLoadChatId.set(chatId);
 }
 
 /*
@@ -39,7 +38,7 @@ export function setKnownInitialId(initialId: string) {
     navigateChat(initialId);
   }
   knownInitialId.set(initialId);
-  setChefDebugProperty('chatInitialId', initialId);
+  setZapdevDebugProperty('chatInitialId', initialId);
 }
 
 // This is useful in places where we want a unique ID (e.g. logs) instead of the

@@ -1,71 +1,72 @@
-import type { WebContainer, WebContainerProcess } from '@webcontainer/api';
+import type { CodeInterpreter } from '@e2b/code-interpreter';
 import type { ITerminal } from '~/types/terminal';
 import { withResolvers } from './promises';
 import { ContainerBootState, waitForContainerBootState } from '~/lib/stores/containerBootState';
-import { cleanTerminalOutput } from 'chef-agent/utils/shell';
+import { cleanTerminalOutput } from 'zapdev-agent/utils/shell';
+import { executeCommand } from '~/lib/e2b';
 
-export async function newShellProcess(webcontainer: WebContainer, terminal: ITerminal) {
+export async function newShellProcess(codeInterpreter: CodeInterpreter, terminal: ITerminal) {
   // Wait for setup to fully complete before allowing shells to spawn.
   await waitForContainerBootState(ContainerBootState.READY);
 
-  const args: string[] = [];
-
-  // we spawn a JSH process with a fallback cols and rows in case the process is not attached yet to a visible terminal
-  const process = await webcontainer.spawn('/bin/jsh', ['--osc', ...args], {
-    terminal: {
-      cols: terminal.cols ?? 80,
-      rows: terminal.rows ?? 15,
-    },
-  });
-
-  const input = process.input.getWriter();
-  const output = process.output;
-
-  const jshReady = withResolvers<void>();
-
-  let isInteractive = false;
-  output.pipeTo(
-    new WritableStream({
-      write(data) {
-        if (!isInteractive) {
-          const [, osc] = data.match(/\x1b\]654;([^\x07]+)\x07/) || [];
-
-          if (osc === 'interactive') {
-            // wait until we see the interactive OSC
-            isInteractive = true;
-
-            jshReady.resolve();
-          }
-        }
-
-        terminal.write(data);
-      },
-    }),
-  );
-
+  // Initialize E2B terminal session
+  terminal.write('🚀 E2B Shell Ready\n\n$ ');
+  
+  // Set up command input handling
+  let commandBuffer = '';
   terminal.onData((data) => {
-    // console.log('terminal onData', { data, isInteractive });
-
-    if (isInteractive) {
-      input.write(data);
+    if (data === '\r') {
+      // Execute command on Enter
+      if (commandBuffer.trim()) {
+        executeTerminalCommand(codeInterpreter, terminal, commandBuffer.trim());
+        commandBuffer = '';
+      }
+      terminal.write('\r\n$ ');
+    } else if (data === '\x7f') {
+      // Handle backspace
+      if (commandBuffer.length > 0) {
+        commandBuffer = commandBuffer.slice(0, -1);
+        terminal.write('\b \b');
+      }
+    } else if (data.charCodeAt(0) >= 32) {
+      // Handle printable characters
+      commandBuffer += data;
+      terminal.write(data);
     }
   });
 
-  await jshReady.promise;
+  return {
+    sessionId: `shell_${Date.now()}`,
+    destroy: () => {
+      // Cleanup logic if needed
+    }
+  };
+}
 
-  return process;
+async function executeTerminalCommand(codeInterpreter: CodeInterpreter, terminal: ITerminal, command: string) {
+  try {
+    const result = await executeCommand(command);
+    
+    if (result.stdout) {
+      terminal.write(result.stdout + '\n');
+    }
+    
+    if (result.stderr) {
+      terminal.write('\x1b[31m' + result.stderr + '\x1b[0m\n'); // Red color for stderr
+    }
+  } catch (error: any) {
+    terminal.write('\x1b[31mError: ' + error.message + '\x1b[0m\n');
+  }
 }
 
 type ExecutionResult = { output: string; exitCode: number };
 
-export class BoltShell {
+export class E2BShell {
   #initialized: (() => void) | undefined;
   #readyPromise: Promise<void>;
-  #webcontainer: WebContainer | undefined;
+  #codeInterpreter: CodeInterpreter | undefined;
   #terminal: ITerminal | undefined;
-  #process: WebContainerProcess | undefined;
-  #outputStream: ReadableStreamDefaultReader<string> | undefined;
-  #shellInputStream: WritableStreamDefaultWriter<string> | undefined;
+  #sessionId: string | undefined;
 
   constructor() {
     this.#readyPromise = new Promise((resolve) => {
@@ -77,14 +78,13 @@ export class BoltShell {
     return this.#readyPromise;
   }
 
-  async init(webcontainer: WebContainer, terminal: ITerminal) {
-    this.#webcontainer = webcontainer;
+  async init(codeInterpreter: CodeInterpreter, terminal: ITerminal) {
+    this.#codeInterpreter = codeInterpreter;
     this.#terminal = terminal;
+    this.#sessionId = `e2b_shell_${Date.now()}`;
 
-    const { process, output } = await this.newBoltShellProcess(webcontainer, terminal);
-    this.#process = process;
-    this.#outputStream = output.getReader();
-    await this.waitTillOscCode('interactive');
+    // Initialize the terminal
+    terminal.write('🚀 E2B Shell Initialized\n\n');
     this.#initialized?.();
   }
 
@@ -92,134 +92,66 @@ export class BoltShell {
     return this.#terminal;
   }
 
-  get process() {
-    return this.#process;
-  }
-
   async startCommand(command: string) {
-    if (!this.process || !this.terminal) {
+    if (!this.#codeInterpreter || !this.#terminal) {
       throw new Error('Terminal not initialized');
     }
 
-    // For terminals that might be readonly, use write method directly for sending commands
-    const shellInput = this.#shellInputStream;
-    if (!shellInput) {
-      throw new Error('Shell input stream not initialized');
-    }
-
-    // Interrupt the current execution with Ctrl+C
-    shellInput.write('\x03');
-    await this.waitTillOscCode('prompt');
-
-    shellInput.write(command.trim() + '\n');
+    // For E2B, we execute commands directly
+    return this.executeCommand(command);
   }
 
   async executeCommand(command: string): Promise<ExecutionResult> {
-    await this.startCommand(command);
+    if (!this.#codeInterpreter) {
+      throw new Error('Code interpreter not initialized');
+    }
 
-    // Wait for the execution to finish
-    const { output, exitCode } = await this.waitTillOscCode('exit');
-
-    let cleanedOutput = output;
     try {
-      cleanedOutput = cleanTerminalOutput(output);
-    } catch (error) {
-      console.log('failed to format terminal output', error);
-    }
+      const result = await executeCommand(command);
+      
+      let output = '';
+      if (result.stdout) {
+        output += result.stdout;
+      }
+      if (result.stderr) {
+        output += result.stderr;
+      }
 
-    return { output: cleanedOutput, exitCode };
+      let cleanedOutput = output;
+      try {
+        cleanedOutput = cleanTerminalOutput(output);
+      } catch (error) {
+        console.log('failed to format terminal output', error);
+      }
+
+      return { output: cleanedOutput, exitCode: result.exitCode };
+    } catch (error: any) {
+      return { 
+        output: `Error: ${error.message}`, 
+        exitCode: 1 
+      };
+    }
   }
 
-  async newBoltShellProcess(webcontainer: WebContainer, terminal: ITerminal) {
-    const args: string[] = [];
-
-    // Wait for setup to fully complete before allowing shells to spawn.
-    await waitForContainerBootState(ContainerBootState.READY);
-
-    // we spawn a JSH process with a fallback cols and rows in case the process is not attached yet to a visible terminal
-    const process = await webcontainer.spawn('/bin/jsh', ['--osc', ...args], {
-      terminal: {
-        cols: terminal.cols ?? 80,
-        rows: terminal.rows ?? 15,
-      },
-    });
-
-    const input = process.input.getWriter();
-    this.#shellInputStream = input;
-
-    const [internalOutput, terminalOutput] = process.output.tee();
-
-    const jshReady = withResolvers<void>();
-
-    let isInteractive = false;
-    terminalOutput.pipeTo(
-      new WritableStream({
-        write(data) {
-          if (!isInteractive) {
-            const [, osc] = data.match(/\x1b\]654;([^\x07]+)\x07/) || [];
-
-            if (osc === 'interactive') {
-              // wait until we see the interactive OSC
-              isInteractive = true;
-
-              jshReady.resolve();
-            }
-          }
-
-          terminal.write(data);
-        },
-      }),
-    );
-
-    terminal.onData((data) => {
-      // console.log('terminal onData', { data, isInteractive });
-
-      if (isInteractive) {
-        input.write(data);
-      }
-    });
-
-    await jshReady.promise;
-
-    return { process, output: internalOutput };
+  write(data: string) {
+    if (this.#terminal) {
+      this.#terminal.write(data);
+    }
   }
 
-  async waitTillOscCode(waitCode: string) {
-    let fullOutput = '';
-    let exitCode: number = 0;
-
-    if (!this.#outputStream) {
-      return { output: fullOutput, exitCode };
-    }
-
-    const tappedStream = this.#outputStream;
-
-    while (true) {
-      const { value, done } = await tappedStream.read();
-
-      if (done) {
-        break;
-      }
-
-      const text = value || '';
-      fullOutput += text;
-
-      // Check if command completion signal with exit code
-      const [, osc, , , code] = text.match(/\x1b\]654;([^\x07=]+)=?((-?\d+):(\d+))?\x07/) || [];
-
-      if (osc === 'exit') {
-        exitCode = parseInt(code, 10);
-      }
-
-      if (osc === waitCode) {
-        break;
-      }
-    }
-
-    return { output: fullOutput, exitCode };
+  destroy() {
+    // Cleanup logic for E2B shell
+    this.#codeInterpreter = undefined;
+    this.#terminal = undefined;
+    this.#sessionId = undefined;
   }
 }
 
+export function newE2BShellProcess() {
+  return new E2BShell();
+}
+
+// Legacy alias for backward compatibility
 export function newBoltShellProcess() {
-  return new BoltShell();
+  return new E2BShell();
 }

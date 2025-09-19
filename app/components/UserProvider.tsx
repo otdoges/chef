@@ -7,7 +7,7 @@ import { setProfile } from '~/lib/stores/profile';
 import { getConvexProfile } from '~/lib/convexProfile';
 import { useLDClient, withLDProvider, basicLogger } from 'launchdarkly-react-client-sdk';
 import { api } from '@convex/_generated/api';
-import { useAuth } from '@workos-inc/authkit-react';
+import { useUser } from '@clerk/clerk-react';
 
 export const UserProvider = withLDProvider<any>({
   clientSideID: import.meta.env.VITE_LD_CLIENT_SIDE_ID,
@@ -18,7 +18,7 @@ export const UserProvider = withLDProvider<any>({
 
 function UserProviderInner({ children }: { children: React.ReactNode }) {
   const launchdarkly = useLDClient();
-  const { user } = useAuth();
+  const { user } = useUser();
   const sessionId = useConvexSessionIdOrNullOrLoading();
   const chatId = useChatId();
   const convex = useConvex();
@@ -65,7 +65,7 @@ function UserProviderInner({ children }: { children: React.ReactNode }) {
           }
         } catch (error) {
           console.error('Failed to fetch Convex profile:', error);
-          // Fallback to WorkOS profile if Convex profile fetch fails
+          // Fallback to Clerk profile if Convex profile fetch fails
           setProfile({
             username: user.firstName ? (user.lastName ? `${user.firstName} ${user.lastName}` : user.firstName) : '',
             email: user.email ?? '',

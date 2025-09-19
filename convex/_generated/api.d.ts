@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as agents from "../agents.js";
 import type * as apiKeys from "../apiKeys.js";
 import type * as cleanup from "../cleanup.js";
 import type * as compressMessages from "../compressMessages.js";
@@ -17,7 +18,10 @@ import type * as crons from "../crons.js";
 import type * as debugPrompt from "../debugPrompt.js";
 import type * as deploy from "../deploy.js";
 import type * as dev from "../dev.js";
+import type * as github from "../github.js";
+import type * as githubVerify from "../githubVerify.js";
 import type * as http from "../http.js";
+import type * as issues from "../issues.js";
 import type * as lz4 from "../lz4.js";
 import type * as lz4Wasm from "../lz4Wasm.js";
 import type * as messages from "../messages.js";
@@ -25,12 +29,14 @@ import type * as migrations from "../migrations.js";
 import type * as openaiProxy from "../openaiProxy.js";
 import type * as rateLimiter from "../rateLimiter.js";
 import type * as resendProxy from "../resendProxy.js";
+import type * as scout from "../scout.js";
 import type * as sessions from "../sessions.js";
 import type * as share from "../share.js";
 import type * as snapshot from "../snapshot.js";
 import type * as socialShare from "../socialShare.js";
 import type * as subchats from "../subchats.js";
 import type * as summarize from "../summarize.js";
+import type * as taskQueue from "../taskQueue.js";
 
 import type {
   ApiFromModules,
@@ -48,6 +54,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  agents: typeof agents;
   apiKeys: typeof apiKeys;
   cleanup: typeof cleanup;
   compressMessages: typeof compressMessages;
@@ -56,7 +63,10 @@ declare const fullApi: ApiFromModules<{
   debugPrompt: typeof debugPrompt;
   deploy: typeof deploy;
   dev: typeof dev;
+  github: typeof github;
+  githubVerify: typeof githubVerify;
   http: typeof http;
+  issues: typeof issues;
   lz4: typeof lz4;
   lz4Wasm: typeof lz4Wasm;
   messages: typeof messages;
@@ -64,12 +74,14 @@ declare const fullApi: ApiFromModules<{
   openaiProxy: typeof openaiProxy;
   rateLimiter: typeof rateLimiter;
   resendProxy: typeof resendProxy;
+  scout: typeof scout;
   sessions: typeof sessions;
   share: typeof share;
   snapshot: typeof snapshot;
   socialShare: typeof socialShare;
   subchats: typeof subchats;
   summarize: typeof summarize;
+  taskQueue: typeof taskQueue;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 

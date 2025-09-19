@@ -9,24 +9,27 @@ import { Toaster } from '~/components/ui/Toaster';
 import { setSelectedTeamSlug, useSelectedTeamSlug, waitForSelectedTeamSlug } from '~/lib/stores/convexTeams';
 import { TeamSelector } from '~/components/convex/TeamSelector';
 import { useTeamsInitializer } from '~/lib/stores/startup/useTeamsInitializer';
-import { ChefAuthProvider, useChefAuth } from '~/components/chat/ChefAuthWrapper';
+import { ZapdevAuthProvider, useZapdevAuth } from '~/components/chat/ZapdevAuthWrapper';
 import { useParams } from '@remix-run/react';
 import { Loading } from '~/components/Loading';
 import type { MetaFunction } from '@vercel/remix';
 import { Button } from '@ui/Button';
 import { ConvexError } from 'convex/values';
 import { Sheet } from '@ui/Sheet';
-import { useAuth } from '@workos-inc/authkit-react';
+import { useAuth as useClerkAuth, ClerkProvider } from '@clerk/clerk-react';
+
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || globalThis.process.env.CLERK_PUBLISHABLE_KEY!;
+
 export const meta: MetaFunction = () => {
   return [
-    { title: 'Cooked with Chef' },
+    { title: 'Cooked with Zapdev' },
     {
       name: 'description',
-      content: 'Someone shared with you a project cooked with Chef, the full-stack AI coding agent from Convex',
+      content: 'Someone shared with you a project cooked with Zapdev, the full-stack AI coding agent from Convex',
     },
     {
       property: 'og:image',
-      content: 'https://chef.convex.dev/social_preview_share.png',
+      content: 'https://zapdev.convex.dev/social_preview_share.png',
     },
   ];
 };
@@ -43,17 +46,17 @@ export const loader = async (args: LoaderFunctionArgs) => {
 
 export default function ShareProject() {
   return (
-    <>
-      <ChefAuthProvider redirectIfUnauthenticated={false}>
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+      <ZapdevAuthProvider redirectIfUnauthenticated={false}>
         <ShareProjectContent />
-      </ChefAuthProvider>
+      </ZapdevAuthProvider>
       <Toaster />
-    </>
+    </ClerkProvider>
   );
 }
 
 function ShareProjectContent() {
-  const { signIn } = useAuth();
+  const { signIn } = useClerkAuth() as unknown as { signIn: () => void };
   const { shareCode } = useParams();
 
   if (!shareCode) {
@@ -61,7 +64,7 @@ function ShareProjectContent() {
   }
 
   useTeamsInitializer();
-  const chefAuthState = useChefAuth();
+  const zapdevAuthState = useZapdevAuth();
 
   const cloneChat = useMutation(api.share.clone);
   const convex = useConvex();
@@ -94,18 +97,18 @@ function ShareProjectContent() {
 
   const selectedTeamSlug = useSelectedTeamSlug();
 
-  if (chefAuthState.kind === 'loading') {
+  if (zapdevAuthState.kind === 'loading') {
     return <Loading />;
   }
 
-  if (chefAuthState.kind !== 'fullyLoggedIn') {
+  if (zapdevAuthState.kind !== 'fullyLoggedIn') {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-4">
         <div className="w-full max-w-md space-y-6 rounded-xl border bg-white p-8">
           <div className="space-y-2 text-center">
-            <h1 className="text-center text-3xl font-bold">Sign in to Chef</h1>
+            <h1 className="text-center text-3xl font-bold">Sign in to Zapdev</h1>
             <p className="text-base text-gray-500">
-              Please sign in to Chef to clone this project
+              Please sign in to Zapdev to clone this project
               {getShareDescription?.description ? (
                 <>
                   : <span className="font-bold">{getShareDescription.description}</span>
@@ -142,7 +145,7 @@ function ShareProjectContent() {
             <p className="text-center text-sm text-content-secondary">Choose where to clone this project</p>
           </div>
 
-          {chefAuthState.kind === 'fullyLoggedIn' && (
+          {zapdevAuthState.kind === 'fullyLoggedIn' && (
             <TeamSelector selectedTeamSlug={selectedTeamSlug} setSelectedTeamSlug={setSelectedTeamSlug} />
           )}
         </div>

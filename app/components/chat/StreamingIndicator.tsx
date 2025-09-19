@@ -230,7 +230,7 @@ function UsageDonut({
   );
 }
 
-function displayChefTokenNumber(num: number) {
+function displayZapdevTokenNumber(num: number) {
   if (num >= 1_000_000) {
     return `${(num / 1_000_000).toFixed(1)}M`;
   } else if (num >= 1_000) {
@@ -289,13 +289,13 @@ function LittleUsage({
         : `${Math.floor(usagePercentage)}% tokens used`;
 
   const detailedLabel = isPaidPlan
-    ? `${displayChefTokenNumber(used)} tokens used / ${displayChefTokenNumber(quota)} included (${Math.floor(usagePercentage)}%)`
+    ? `${displayZapdevTokenNumber(used)} tokens used / ${displayZapdevTokenNumber(quota)} included (${Math.floor(usagePercentage)}%)`
     : isLoadingUsage
       ? ''
       : usagePercentage < 100
-        ? `${displayChefTokenNumber(used)} tokens used / ${displayChefTokenNumber(quota)} (${Math.floor(usagePercentage)}%)`
+        ? `${displayZapdevTokenNumber(used)} tokens used / ${displayZapdevTokenNumber(quota)} (${Math.floor(usagePercentage)}%)`
         : usingApiKey
-          ? `Out of tokens (${displayChefTokenNumber(used)} used), using API key`
+          ? `Out of tokens (${displayZapdevTokenNumber(used)} used), using API key`
           : `Out of tokens`;
 
   return (
@@ -323,14 +323,14 @@ function LittleUsage({
             <UsageDonut tokenUsage={loading ? null : { used, quota }} label={detailedLabel} hidden={false} />
             <p className="mt-1 text-xs text-content-secondary">
               {isPaidPlan
-                ? `Chef tokens power code generation. Your team's Chef tokens reset to ${displayChefTokenNumber(quota)} on your regular billing cycle. Unused tokens from the previous month are not carried over. Additional Chef tokens cost $10 per 1M tokens.`
-                : 'Chef tokens power code generation. Tokens reset on the first of each month and tokens from the previous month are not carried over.'}
+                ? `Zapdev tokens power code generation. Your team's Zapdev tokens reset to ${displayZapdevTokenNumber(quota)} on your regular billing cycle. Unused tokens from the previous month are not carried over. Additional Zapdev tokens cost $10 per 1M tokens.`
+                : 'Zapdev tokens power code generation. Tokens reset on the first of each month and tokens from the previous month are not carried over.'}
             </p>
             <ul className="mt-2 space-y-2 text-sm text-content-primary">
               {isPaidPlan ? null : (
                 <li className="mt-2 border-t pt-2">
                   <Button
-                    href={`https://dashboard.convex.dev/t/${teamSlug}/settings/billing?source=chef`}
+                    href={`https://dashboard.convex.dev/t/${teamSlug}/settings/billing?source=zapdev`}
                     target="_blank"
                     variant="unstyled"
                     className="underline hover:text-content-link"
@@ -347,7 +347,7 @@ function LittleUsage({
                       {referralStats.left === 5
                         ? 'Refer a friend '
                         : `Refer up to ${referralStats.left} more new users `}
-                      to get 85K additional Chef tokens per month.
+                      to get 85K additional Zapdev tokens per month.
                     </p>
                     {referralStats.left > 0 && <Referrals referralCode={referralCode} />}
                   </div>
@@ -356,9 +356,9 @@ function LittleUsage({
               <li className="mt-2 border-t pt-2 text-xs text-content-secondary">
                 {usingApiKey ? (
                   usagePercentage >= 100 ? (
-                    "You're using an API key so can keep building without using Chef tokens."
+                    "You're using an API key so can keep building without using Zapdev tokens."
                   ) : (
-                    "You have an API key set for the model you're using so you'll be able to keep building after running out of Chef tokens."
+                    "You have an API key set for the model you're using so you'll be able to keep building after running out of Zapdev tokens."
                   )
                 ) : (
                   <>
@@ -370,7 +370,7 @@ function LittleUsage({
                     >
                       Add your own API key
                     </Button>{' '}
-                    in settings to avoid spending Chef tokens.
+                    in settings to avoid spending Zapdev tokens.
                   </>
                 )}
               </li>
@@ -394,13 +394,13 @@ function Referrals({ referralCode }: { referralCode: string }) {
         <input
           type="text"
           readOnly
-          value={`https://convex.dev/try-chef/${referralCode}`}
+          value={`https://convex.dev/try-zapdev/${referralCode}`}
           className="w-full flex-1 rounded-md border bg-bolt-elements-background-depth-2 px-3 py-1.5 text-sm text-content-primary"
         />
         <Button
           variant="neutral"
           size="xs"
-          onClick={() => copyToClipboard(`https://convex.dev/try-chef/${referralCode}`)}
+          onClick={() => copyToClipboard(`https://convex.dev/try-zapdev/${referralCode}`)}
           tip="Copy link"
           icon={<ClipboardIcon />}
         />

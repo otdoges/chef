@@ -1,27 +1,26 @@
 import { useEffect } from 'react';
 import { ContainerBootState, setContainerBootState, waitForBootStepCompleted } from '~/lib/stores/containerBootState';
-import { webcontainer } from '~/lib/webcontainer';
+import { codeInterpreter, executeCommand } from '~/lib/e2b';
 import { useStore } from '@nanostores/react';
 import { sessionIdStore } from '~/lib/stores/sessionId';
 import { api } from '@convex/_generated/api';
 import type { ConvexReactClient } from 'convex/react';
 import { useConvex } from 'convex/react';
 import { decompressWithLz4 } from '~/lib/compression';
-import { streamOutput } from '~/utils/process';
-import { cleanTerminalOutput } from 'chef-agent/utils/shell';
+import { cleanTerminalOutput } from 'zapdev-agent/utils/shell';
 import { toast } from 'sonner';
 import { waitForConvexProjectConnection } from '~/lib/stores/convexProject';
-import type { ConvexProject } from 'chef-agent/types';
-import type { WebContainer } from '@webcontainer/api';
-import { queryEnvVariableWithRetries, setEnvVariablesWithRetries } from 'chef-agent/convexEnvVariables';
+import type { ConvexProject } from 'zapdev-agent/types';
+import type { CodeInterpreter } from '@e2b/code-interpreter';
+import { queryEnvVariableWithRetries, setEnvVariablesWithRetries } from 'zapdev-agent/convexEnvVariables';
 import { getConvexSiteUrl } from '~/lib/convexSiteUrl';
 import { workbenchStore } from '~/lib/stores/workbench.client';
-import { initializeConvexAuth } from 'chef-agent/convexAuth';
+import { initializeConvexAuth } from 'zapdev-agent/convexAuth';
 import { appendEnvVarIfNotSet } from '~/utils/envFileUtils';
 import { getFileUpdateCounter } from '~/lib/stores/fileUpdateCounter';
 import { chatSyncState } from './chatSyncState';
 import { FILE_EVENTS_DEBOUNCE_MS } from '~/lib/stores/files';
-import { setChefDebugProperty } from 'chef-agent/utils/chefDebug';
+import { setZapdevDebugProperty } from 'zapdev-agent/utils/zapdevDebug';
 
 const TEMPLATE_URL = '/template-snapshot-63fbe575.bin';
 
@@ -33,7 +32,7 @@ export function useNewChatContainerSetup() {
         await waitForBootStepCompleted(ContainerBootState.STARTING);
         await setupContainer(convex, { snapshotUrl: TEMPLATE_URL, allowNpmInstallFailure: false });
       } catch (error: any) {
-        toast.error('Failed to setup Chef environment. Try reloading the page.');
+        toast.error('Failed to setup Zapdev environment. Try reloading the page.');
         setContainerBootState(ContainerBootState.ERROR, error);
       }
     };
@@ -61,7 +60,7 @@ export function useExistingChatContainerSetup(loadedChatId: string | undefined) 
         }
         await setupContainer(convex, { snapshotUrl, allowNpmInstallFailure: true });
       } catch (error: any) {
-        toast.error('Failed to setup Chef environment. Try reloading the page.');
+        toast.error('Failed to setup Zapdev environment. Try reloading the page.');
         setContainerBootState(ContainerBootState.ERROR, error);
       }
     };
@@ -80,23 +79,24 @@ async function setupContainer(
   const compressed = await resp.arrayBuffer();
   const decompressed = decompressWithLz4(new Uint8Array(compressed));
 
-  const container = await webcontainer;
-  await container.mount(decompressed);
+  const interpreter = await codeInterpreter;
+  // TODO: Implement snapshot mounting for E2B
+  console.warn('Snapshot mounting not yet implemented for E2B');
 
   // After loading the snapshot, we need to load the files into the FilesStore since
   // we won't receive file events for snapshot files.
-  await workbenchStore.prewarmWorkdir(container);
+  await workbenchStore.prewarmWorkdir(interpreter);
 
-  setChefDebugProperty('webcontainer', container);
+  setZapdevDebugProperty('codeInterpreter', interpreter);
 
   setContainerBootState(ContainerBootState.DOWNLOADING_DEPENDENCIES);
-  const npm = await container.spawn('npm', ['install', '--no-fund', '--no-deprecated']);
-  const { output, exitCode } = await streamOutput(npm);
+  const { stdout, stderr, exitCode } = await executeCommand('npm install --no-fund --no-deprecated');
+  const output = stdout + stderr;
   console.log('NPM output', cleanTerminalOutput(output));
 
   if (exitCode !== 0) {
     if (options.allowNpmInstallFailure) {
-      toast.error(`Failed to install dependencies. Fix your package.json and tell Chef to redeploy.`, {
+      toast.error(`Failed to install dependencies. Fix your package.json and tell Zapdev to redeploy.`, {
         duration: Infinity,
       });
       console.error(`npm install failed with exit code ${exitCode}: ${output}`);
@@ -109,7 +109,7 @@ async function setupContainer(
   const convexProject = await waitForConvexProjectConnection();
 
   setContainerBootState(ContainerBootState.SETTING_UP_CONVEX_ENV_VARS);
-  await setupConvexEnvVars(container, convexProject);
+  await setupConvexEnvVars(interpreter, convexProject);
   await setupOpenAIToken(convex, convexProject);
   await setupResendToken(convex, convexProject);
   setContainerBootState(ContainerBootState.CONFIGURING_CONVEX_AUTH);
@@ -136,15 +136,10 @@ async function initializeFileSystemBackup() {
   }
 }
 
-async function setupConvexEnvVars(webcontainer: WebContainer, convexProject: ConvexProject) {
+async function setupConvexEnvVars(interpreter: CodeInterpreter, convexProject: ConvexProject) {
   const { token } = convexProject;
-  await appendEnvVarIfNotSet({
-    envFilePath: '.env.local',
-    readFile: (path) => webcontainer.fs.readFile(path, 'utf-8'),
-    writeFile: (path, content) => webcontainer.fs.writeFile(path, content),
-    envVarName: 'CONVEX_DEPLOY_KEY',
-    value: token,
-  });
+  // TODO: Implement E2B-compatible env var setup
+  console.warn('setupConvexEnvVars not yet implemented for E2B');
 }
 
 async function setupOpenAIToken(convex: ConvexReactClient, project: ConvexProject) {

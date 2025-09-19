@@ -10,20 +10,14 @@ import type { Doc } from '@convex/_generated/dataModel';
 import { captureMessage } from '@sentry/remix';
 import { useLaunchDarkly } from '~/lib/hooks/useLaunchDarkly';
 
-export type ModelProvider = 'openai' | 'google' | 'xai' | 'anthropic' | 'auto';
+export type ModelProvider = 'openrouter' | 'auto';
 
 export function displayModelProviderName(provider: ModelProvider) {
   switch (provider) {
-    case 'openai':
-      return 'OpenAI';
-    case 'google':
-      return 'Google';
-    case 'xai':
-      return 'xAI';
-    case 'anthropic':
-      return 'Anthropic';
+    case 'openrouter':
+      return 'OpenRouter';
     case 'auto':
-      return 'Anthropic';
+      return 'Auto';
     default: {
       const exhaustiveCheck: never = provider;
       throw new Error(`Unknown model provider: ${exhaustiveCheck}`);
@@ -43,10 +37,10 @@ export interface ModelSelectorProps {
 
 const providerToIcon: Record<string, React.ReactNode> = {
   auto: <MagicWandIcon />,
-  openai: svgIcon('/icons/openai.svg'),
-  anthropic: svgIcon('/icons/claude.svg'),
-  google: svgIcon('/icons/gemini.svg'),
-  xai: (
+  'anthropic/claude': svgIcon('/icons/claude.svg'),
+  'openai/gpt': svgIcon('/icons/openai.svg'),
+  'google/gemini': svgIcon('/icons/gemini.svg'),
+  'x-ai/grok': (
     <svg width="16" height="16" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M395.479 633.828L735.91 381.105C752.599 368.715 776.454 373.548 784.406 392.792C826.26 494.285 807.561 616.253 724.288 699.996C641.016 783.739 525.151 802.104 419.247 760.277L303.556 814.143C469.49 928.202 670.987 899.995 796.901 773.282C896.776 672.843 927.708 535.937 898.785 412.476L899.047 412.739C857.105 231.37 909.358 158.874 1016.4 10.6326C1018.93 7.11771 1021.47 3.60279 1024 0L883.144 141.651V141.212L395.392 633.916"
@@ -60,54 +54,73 @@ const providerToIcon: Record<string, React.ReactNode> = {
   ),
 };
 
+// OpenRouter models available through single API
 export const models: Partial<
   Record<
     ModelSelection,
     {
       name: string;
+      openRouterModel: string;
       recommended?: boolean;
       requireKey?: boolean;
       provider: ModelProvider;
+      iconKey?: string;
     }
   >
 > = {
   auto: {
-    name: 'Auto',
+    name: 'Auto (Claude 3.5 Sonnet)',
+    openRouterModel: 'anthropic/claude-3.5-sonnet',
     recommended: true,
     provider: 'auto',
+    iconKey: 'auto',
   },
   'claude-4-sonnet': {
-    name: 'Claude 4 Sonnet',
-    provider: 'anthropic',
+    name: 'Claude 3.5 Sonnet',
+    openRouterModel: 'anthropic/claude-3.5-sonnet',
+    provider: 'openrouter',
     recommended: true,
     requireKey: false,
-  },
-  'gemini-2.5-pro': {
-    name: 'Gemini 2.5 Pro',
-    recommended: false,
-    provider: 'google',
-  },
-  'gpt-4.1': {
-    name: 'GPT-4.1',
-    provider: 'openai',
-  },
-  'gpt-5': {
-    name: 'GPT-5',
-    provider: 'openai',
-  },
-  'grok-3-mini': {
-    name: 'Grok 3 Mini',
-    provider: 'xai',
+    iconKey: 'anthropic/claude',
   },
   'claude-3-5-haiku': {
     name: 'Claude 3.5 Haiku',
-    provider: 'anthropic',
-    requireKey: true,
+    openRouterModel: 'anthropic/claude-3.5-haiku',
+    provider: 'openrouter',
+    requireKey: false,
+    iconKey: 'anthropic/claude',
+  },
+  'gemini-2.5-pro': {
+    name: 'Gemini 2.0 Flash',
+    openRouterModel: 'google/gemini-2.0-flash-exp',
+    recommended: false,
+    provider: 'openrouter',
+    iconKey: 'google/gemini',
+  },
+  'gpt-4.1': {
+    name: 'GPT-4 Turbo',
+    openRouterModel: 'openai/gpt-4-turbo',
+    provider: 'openrouter',
+    iconKey: 'openai/gpt',
+  },
+  'gpt-4o': {
+    name: 'GPT-4o',
+    openRouterModel: 'openai/gpt-4o',
+    provider: 'openrouter',
+    iconKey: 'openai/gpt',
+  },
+  'grok-3-mini': {
+    name: 'Grok Beta',
+    openRouterModel: 'x-ai/grok-beta',
+    provider: 'openrouter',
+    iconKey: 'x-ai/grok',
   },
   'gpt-4.1-mini': {
-    name: 'GPT-4.1 Mini',
-    provider: 'openai',
-    requireKey: true,
+    name: 'GPT-4o Mini',
+    openRouterModel: 'openai/gpt-4o-mini',
+    provider: 'openrouter',
+    requireKey: false,
+    iconKey: 'openai/gpt',
   },
 } as const;
 
@@ -118,16 +131,15 @@ export const ModelSelector = React.memo(function ModelSelector({
 }: ModelSelectorProps) {
   const apiKey = useQuery(api.apiKeys.apiKeyForCurrentMember);
   const selectedModel = models[modelSelection];
-  const { useGeminiAuto, enableGpt5 } = useLaunchDarkly();
+  const { enableGpt5 } = useLaunchDarkly();
+  
   if (!selectedModel) {
     captureMessage(`Model ${modelSelection} not found`);
     setModelSelection('auto');
   }
 
   const availableModels = Object.entries(models).filter(([key]) => {
-    if (key === 'gpt-5') {
-      return enableGpt5;
-    }
+    // Filter models based on feature flags if needed
     return true;
   });
 
@@ -136,7 +148,7 @@ export const ModelSelector = React.memo(function ModelSelector({
       searchPlaceholder="Search models..."
       label="Select model"
       options={availableModels.map(([value, model]) => ({
-        label: model.provider + ' ' + model.name,
+        label: model.name,
         value: value as ModelSelection,
       }))}
       buttonClasses="w-fit"
@@ -155,11 +167,13 @@ export const ModelSelector = React.memo(function ModelSelector({
           return null;
         }
         const prefersAlwaysUseApiKey = apiKey?.preference === 'always';
-        const key = apiKey ? keyForProvider(apiKey, model.provider, useGeminiAuto) : undefined;
+        const key = apiKey ? keyForProvider(apiKey, model.provider) : undefined;
         const canUseModel = !(model.requireKey && !key) && !(prefersAlwaysUseApiKey && !key);
+        const iconKey = model.iconKey || model.provider;
+        
         return (
           <div className={'flex items-center gap-2'}>
-            {providerToIcon[model.provider]}
+            {providerToIcon[iconKey]}
             <div className="max-w-48 truncate">{model?.name}</div>
 
             {!inButton && (
@@ -176,8 +190,8 @@ export const ModelSelector = React.memo(function ModelSelector({
                   <Tooltip
                     tip={
                       model.requireKey
-                        ? 'You must set an API key for the relevant provider to use this model.'
-                        : 'Your preferences require an API key to be set to use this model. You may change your preferences or set an API key.'
+                        ? 'You must set an OpenRouter API key to use this model.'
+                        : 'Your preferences require an API key to be set to use this model. You may change your preferences or set an OpenRouter API key.'
                     }
                     side="right"
                   >
@@ -193,16 +207,10 @@ export const ModelSelector = React.memo(function ModelSelector({
   );
 });
 
-const keyForProvider = (apiKeys: Doc<'convexMembers'>['apiKey'], provider: ModelProvider, useGeminiAuto: boolean) => {
-  if (provider === 'anthropic') {
-    return apiKeys?.value;
+const keyForProvider = (apiKeys: Doc<'convexMembers'>['apiKey'], provider: ModelProvider) => {
+  // All models now use OpenRouter, so check for OpenRouter API key
+  if (provider === 'openrouter' || provider === 'auto') {
+    return apiKeys?.openrouter || apiKeys?.value; // Support legacy 'value' field
   }
-  if (provider === 'auto') {
-    if (useGeminiAuto) {
-      return apiKeys?.google;
-    } else {
-      return apiKeys?.value;
-    }
-  }
-  return apiKeys?.[provider];
+  return undefined;
 };

@@ -1,4 +1,4 @@
-The vite dev server serving the user's Chef-generated app responds to both
+The vite dev server serving the user's Zapdev-generated app responds to both
 HTTP and HMR WebSocket traffic.
 
 We proxy this traffic for previews so that different domains can be used

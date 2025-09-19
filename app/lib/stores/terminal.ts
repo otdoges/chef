@@ -1,7 +1,7 @@
-import type { WebContainer, WebContainerProcess } from '@webcontainer/api';
+import type { CodeInterpreter } from '@e2b/code-interpreter';
 import { atom, type WritableAtom } from 'nanostores';
 import type { ITerminal, TerminalInitializationOptions } from '~/types/terminal';
-import { newBoltShellProcess, newShellProcess } from '~/utils/shell';
+import { newE2BShellProcess } from '~/utils/shell';
 import { coloredText } from '~/utils/terminal';
 import { workbenchStore } from './workbench.client';
 import {
@@ -12,23 +12,33 @@ import {
 } from './terminalTabs';
 import { toast } from 'sonner';
 import { ContainerBootState, waitForBootStepCompleted } from './containerBootState';
+import { executeCommand } from '~/lib/e2b';
+
+// E2B shell process interface
+interface E2BShellProcess {
+  init(codeInterpreter: CodeInterpreter, terminal: ITerminal): Promise<void>;
+  executeCommand(command: string): Promise<{ exitCode: number; stdout: string; stderr: string }>;
+  write(data: string): void;
+  destroy(): void;
+}
 
 export class TerminalStore {
-  #webcontainer: Promise<WebContainer>;
-  #terminals: Array<{ terminal: ITerminal; process: WebContainerProcess }> = [];
-  #boltTerminal = newBoltShellProcess();
-  #deployTerminal = newBoltShellProcess();
+  #codeInterpreter: Promise<CodeInterpreter>;
+  #terminals: Array<{ terminal: ITerminal; sessionId: string }> = [];
+  #boltTerminal = newE2BShellProcess();
+  #deployTerminal = newE2BShellProcess();
   showTerminal: WritableAtom<boolean> = import.meta.hot?.data.showTerminal ?? atom(true);
 
   startDevServerOnAttach = false;
 
-  constructor(webcontainerPromise: Promise<WebContainer>) {
-    this.#webcontainer = webcontainerPromise;
+  constructor(codeInterpreterPromise: Promise<CodeInterpreter>) {
+    this.#codeInterpreter = codeInterpreterPromise;
 
     if (import.meta.hot) {
       import.meta.hot.data.showTerminal = this.showTerminal;
     }
   }
+  
   get boltTerminal() {
     return this.#boltTerminal;
   }
@@ -39,8 +49,8 @@ export class TerminalStore {
 
   async attachBoltTerminal(terminal: ITerminal) {
     try {
-      const wc = await this.#webcontainer;
-      await this.#boltTerminal.init(wc, terminal);
+      const codeInterpreter = await this.#codeInterpreter;
+      await this.#boltTerminal.init(codeInterpreter, terminal);
       // Note -- do not start the dev server here, since it will be handled by
       // `attachDeployTerminal` and to avoid conflicts with `npx convex dev`
       // triggering this server to restart
@@ -73,14 +83,14 @@ export class TerminalStore {
     }
 
     if (!workbenchStore.isDefaultPreviewRunning()) {
-      await this.#boltTerminal.executeCommand('vite --open');
+      await this.#boltTerminal.executeCommand('npm run dev');
     }
   }
 
   async attachDeployTerminal(terminal: ITerminal, options?: TerminalInitializationOptions) {
     try {
-      const wc = await this.#webcontainer;
-      await this.#deployTerminal.init(wc, terminal);
+      const codeInterpreter = await this.#codeInterpreter;
+      await this.#deployTerminal.init(codeInterpreter, terminal);
       if (options?.isReload) {
         await this.deployFunctionsAndRunDevServer(options.shouldDeployConvexFunctions ?? false);
       }
@@ -93,17 +103,61 @@ export class TerminalStore {
 
   async attachTerminal(terminal: ITerminal) {
     try {
-      const shellProcess = await newShellProcess(await this.#webcontainer, terminal);
-      this.#terminals.push({ terminal, process: shellProcess });
+      const codeInterpreter = await this.#codeInterpreter;
+      const sessionId = `terminal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Initialize terminal session
+      terminal.write('🚀 E2B Terminal Ready\n\n');
+      
+      // Set up command input handling
+      let commandBuffer = '';
+      terminal.onData((data) => {
+        if (data === '\r') {
+          // Execute command on Enter
+          if (commandBuffer.trim()) {
+            this.#executeTerminalCommand(codeInterpreter, terminal, commandBuffer.trim());
+            commandBuffer = '';
+          }
+          terminal.write('\r\n$ ');
+        } else if (data === '\x7f') {
+          // Handle backspace
+          if (commandBuffer.length > 0) {
+            commandBuffer = commandBuffer.slice(0, -1);
+            terminal.write('\b \b');
+          }
+        } else if (data.charCodeAt(0) >= 32) {
+          // Handle printable characters
+          commandBuffer += data;
+          terminal.write(data);
+        }
+      });
+      
+      terminal.write('$ ');
+      this.#terminals.push({ terminal, sessionId });
     } catch (error: any) {
       terminal.write(coloredText.red('Failed to spawn shell\n\n') + error.message);
       return;
     }
   }
 
-  onTerminalResize(cols: number, rows: number) {
-    for (const { process } of this.#terminals) {
-      process.resize({ cols, rows });
+  async #executeTerminalCommand(codeInterpreter: CodeInterpreter, terminal: ITerminal, command: string) {
+    try {
+      const result = await executeCommand(command);
+      
+      if (result.stdout) {
+        terminal.write(result.stdout + '\n');
+      }
+      
+      if (result.stderr) {
+        terminal.write(coloredText.red(result.stderr) + '\n');
+      }
+    } catch (error: any) {
+      terminal.write(coloredText.red(`Error: ${error.message}\n`));
     }
+  }
+
+  onTerminalResize(cols: number, rows: number) {
+    // E2B doesn't require explicit terminal resizing like WebContainer
+    // The terminal size is handled by the frontend terminal component
   }
 }

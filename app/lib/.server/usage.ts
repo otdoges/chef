@@ -1,9 +1,9 @@
 import type { LanguageModelUsage, Message, ProviderMetadata } from 'ai';
-import { createScopedLogger } from 'chef-agent/utils/logger';
+import { createScopedLogger } from 'zapdev-agent/utils/logger';
 import { getTokenUsage } from '~/lib/convexUsage';
 import type { ProviderType, UsageAnnotation } from '~/lib/common/annotations';
 import { modelForProvider, type ModelProvider } from './llm/provider';
-import { calculateTotalBilledUsageForMessage, calculateChefTokens } from '~/lib/common/usage';
+import { calculateTotalBilledUsageForMessage, calculateZapdevTokens } from '~/lib/common/usage';
 import { captureMessage } from '@sentry/remix';
 
 const logger = createScopedLogger('usage');
@@ -78,9 +78,9 @@ export async function recordUsage(
   finalGeneration: { usage: LanguageModelUsage; providerMetadata?: ProviderMetadata },
 ) {
   const totalUsageBilledFor = await calculateTotalBilledUsageForMessage(lastMessage, finalGeneration);
-  const { chefTokens } = calculateChefTokens(totalUsageBilledFor, modelProvider);
+  const { zapdevTokens } = calculateZapdevTokens(totalUsageBilledFor, modelProvider);
 
-  if (chefTokens === 0) {
+  if (zapdevTokens === 0) {
     captureMessage('Recorded usage was 0. Something wrong with provider?', {
       level: 'error',
       tags: {
@@ -94,7 +94,7 @@ export async function recordUsage(
   const Authorization = `Bearer ${token}`;
   const url = `${provisionHost}/api/dashboard/teams/${teamSlug}/usage/record_tokens`;
 
-  logger.info('Logging total usage', JSON.stringify(totalUsageBilledFor), 'corresponding to chef tokens', chefTokens);
+  logger.info('Logging total usage', JSON.stringify(totalUsageBilledFor), 'corresponding to zapdev tokens', zapdevTokens);
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -102,7 +102,7 @@ export async function recordUsage(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      centitokens: chefTokens,
+      centitokens: zapdevTokens,
     }),
   });
   if (!response.ok) {

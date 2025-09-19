@@ -9,7 +9,7 @@ import { Pie } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, type ChartOptions } from 'chart.js';
 import { parseAnnotations, type ProviderType, type Usage, type UsageAnnotation } from '~/lib/common/annotations';
 import {
-  calculateChefTokens,
+  calculateZapdevTokens,
   getFailedToolCalls,
   calculateTotalUsage,
   initializeUsage,
@@ -19,7 +19,7 @@ import { decompressWithLz4 } from '~/lib/compression.client';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { getConvexAuthToken } from '~/lib/stores/sessionId';
 import { useConvex } from 'convex/react';
-import { setChefDebugProperty } from 'chef-agent/utils/chefDebug';
+import { setZapdevDebugProperty } from 'zapdev-agent/utils/zapdevDebug';
 // Register Chart.js components - needs to include ALL required elements
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -36,8 +36,8 @@ function formatNumber(num: number): string {
 type DebugUsageData = {
   chatTotalRawUsage: Usage;
   chatTotalUsageBilledFor: Usage;
-  chatTotalChefTokens: number;
-  chatTotalChefBreakdown: ChefBreakdown;
+  chatTotalZapdevTokens: number;
+  chatTotalZapdevBreakdown: ZapdevBreakdown;
   usagePerMessage: Array<{
     messageIdx: number;
     parts: {
@@ -47,15 +47,15 @@ type DebugUsageData = {
       usageInfo: {
         rawUsage: Usage;
         billedUsage: Usage;
-        chefTokens: number;
-        chefBreakdown: ChefBreakdown;
+        zapdevTokens: number;
+        zapdevBreakdown: ZapdevBreakdown;
       } | null;
     }[];
     messageSummaryInfo: { numParts: number; numToolInvocations: number; numFailedToolInvocations: number };
     rawUsage: Usage;
     billedUsage: Usage;
-    chefTokens: number;
-    chefBreakdown: ChefBreakdown;
+    zapdevTokens: number;
+    zapdevBreakdown: ZapdevBreakdown;
   }>;
 };
 
@@ -98,7 +98,7 @@ export function UsageBreakdownView({
         const decompressed = decompressWithLz4(new Uint8Array(await blob.arrayBuffer()));
         const messages = JSON.parse(new TextDecoder().decode(decompressed));
         setMessages(messages);
-        setChefDebugProperty('messages', messages);
+        setZapdevDebugProperty('messages', messages);
       }
       void parseFileContent(fileContent);
     } else {
@@ -119,7 +119,7 @@ export function UsageBreakdownView({
         const decompressed = decompressWithLz4(new Uint8Array(bytes));
         const messages = JSON.parse(new TextDecoder().decode(decompressed));
         setMessages(messages);
-        setChefDebugProperty('messages', messages);
+        setZapdevDebugProperty('messages', messages);
       };
       void fetchUsageData();
     }
@@ -142,8 +142,8 @@ export function UsageBreakdownView({
       <BreakdownView
         rawUsage={usageData.chatTotalRawUsage}
         billedUsage={usageData.chatTotalUsageBilledFor}
-        chefTokens={usageData.chatTotalChefTokens}
-        chefBreakdown={usageData.chatTotalChefBreakdown}
+        zapdevTokens={usageData.chatTotalZapdevTokens}
+        zapdevBreakdown={usageData.chatTotalZapdevBreakdown}
         title="Total Usage"
         startOpen={true}
       />
@@ -151,7 +151,7 @@ export function UsageBreakdownView({
         <h2>Per Message</h2>
         {usageData?.usagePerMessage.map((usage) => (
           <CollapsibleView
-            title={`Message ${usage.messageIdx} -- ${formatNumber(usage.chefTokens)} chef tokens`}
+            title={`Message ${usage.messageIdx} -- ${formatNumber(usage.zapdevTokens)} zapdev tokens`}
             key={usage.messageIdx.toString()}
           >
             <div className="ml-4">
@@ -162,15 +162,15 @@ export function UsageBreakdownView({
               <BreakdownView
                 rawUsage={usage.rawUsage}
                 billedUsage={usage.billedUsage}
-                chefTokens={usage.chefTokens}
-                chefBreakdown={usage.chefBreakdown}
+                zapdevTokens={usage.zapdevTokens}
+                zapdevBreakdown={usage.zapdevBreakdown}
               />
               <CollapsibleView title="Parts" startOpen={false}>
                 <div className="ml-4 flex flex-col gap-4">
                   {usage.parts.map((part, idx) => (
                     <div className="flex flex-col gap-4" key={idx}>
                       <CollapsibleView
-                        title={`Part ${idx} -- Chef Tokens: ${formatNumber(part.usageInfo?.chefTokens ?? 0)}`}
+                        title={`Part ${idx} -- Zapdev Tokens: ${formatNumber(part.usageInfo?.zapdevTokens ?? 0)}`}
                         startOpen={false}
                       >
                         <div className="ml-4 flex flex-col gap-4">
@@ -183,8 +183,8 @@ export function UsageBreakdownView({
                             <BreakdownView
                               rawUsage={part.usageInfo.rawUsage}
                               billedUsage={part.usageInfo.billedUsage}
-                              chefTokens={part.usageInfo.chefTokens}
-                              chefBreakdown={part.usageInfo.chefBreakdown}
+                              zapdevTokens={part.usageInfo.zapdevTokens}
+                              zapdevBreakdown={part.usageInfo.zapdevBreakdown}
                             />
                           ) : (
                             <p>No usage info</p>
@@ -225,31 +225,31 @@ const renderPieChart = (data: Record<string, number>) => {
 function BreakdownView({
   rawUsage,
   billedUsage,
-  chefTokens,
-  chefBreakdown,
+  zapdevTokens,
+  zapdevBreakdown,
   title,
   startOpen = false,
 }: {
   rawUsage: Usage;
   billedUsage: Usage;
-  chefTokens: number;
-  chefBreakdown: ChefBreakdown;
+  zapdevTokens: number;
+  zapdevBreakdown: ZapdevBreakdown;
   title?: string;
   startOpen?: boolean;
 }) {
   const tokensData = {
-    'Prompt - Anthropic (Uncached)': chefBreakdown.promptTokens.anthropic.uncached,
-    'Prompt - Anthropic (Cached)': chefBreakdown.promptTokens.anthropic.cached,
-    'Prompt - OpenAI (Uncached)': chefBreakdown.promptTokens.openai.uncached,
-    'Prompt - OpenAI (Cached)': chefBreakdown.promptTokens.openai.cached,
-    'Prompt - XAI (Uncached)': chefBreakdown.promptTokens.xai.uncached,
-    'Prompt - XAI (Cached)': chefBreakdown.promptTokens.xai.cached,
-    'Prompt - Google (Uncached)': chefBreakdown.promptTokens.google.uncached,
-    'Prompt - Google (Cached)': chefBreakdown.promptTokens.google.cached,
-    'Completion - Anthropic': chefBreakdown.completionTokens.anthropic,
-    'Completion - OpenAI': chefBreakdown.completionTokens.openai,
-    'Completion - XAI': chefBreakdown.completionTokens.xai,
-    'Completion - Google': chefBreakdown.completionTokens.google,
+    'Prompt - Anthropic (Uncached)': zapdevBreakdown.promptTokens.anthropic.uncached,
+    'Prompt - Anthropic (Cached)': zapdevBreakdown.promptTokens.anthropic.cached,
+    'Prompt - OpenAI (Uncached)': zapdevBreakdown.promptTokens.openai.uncached,
+    'Prompt - OpenAI (Cached)': zapdevBreakdown.promptTokens.openai.cached,
+    'Prompt - XAI (Uncached)': zapdevBreakdown.promptTokens.xai.uncached,
+    'Prompt - XAI (Cached)': zapdevBreakdown.promptTokens.xai.cached,
+    'Prompt - Google (Uncached)': zapdevBreakdown.promptTokens.google.uncached,
+    'Prompt - Google (Cached)': zapdevBreakdown.promptTokens.google.cached,
+    'Completion - Anthropic': zapdevBreakdown.completionTokens.anthropic,
+    'Completion - OpenAI': zapdevBreakdown.completionTokens.openai,
+    'Completion - XAI': zapdevBreakdown.completionTokens.xai,
+    'Completion - Google': zapdevBreakdown.completionTokens.google,
   };
   return (
     <div>
@@ -280,14 +280,14 @@ function BreakdownView({
           </div>
         </CollapsibleView>
 
-        <CollapsibleView title="Chef Breakdown" startOpen={true}>
+        <CollapsibleView title="Zapdev Breakdown" startOpen={true}>
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-4">
-              <p className="text-2xl font-bold">{formatNumber(chefTokens)}</p>
+              <p className="text-2xl font-bold">{formatNumber(zapdevTokens)}</p>
               <div className="flex flex-wrap gap-8">{renderPieChart(tokensData)}</div>
             </div>
             <div>
-              <JsonView data={chefBreakdown} shouldExpandNode={(level) => level < 1} />
+              <JsonView data={zapdevBreakdown} shouldExpandNode={(level) => level < 1} />
             </div>
           </div>
         </CollapsibleView>
@@ -322,8 +322,8 @@ async function getUsageBreakdown(messages: Message[]) {
     bedrockCacheWriteInputTokens: 0,
     bedrockCacheReadInputTokens: 0,
   };
-  let chatTotalChefTokens = 0;
-  const chatTotalChefBreakdown: ChefBreakdown = {
+  let chatTotalZapdevTokens = 0;
+  const chatTotalZapdevBreakdown: ZapdevBreakdown = {
     completionTokens: {
       anthropic: 0,
       openai: 0,
@@ -358,15 +358,15 @@ async function getUsageBreakdown(messages: Message[]) {
       usageInfo: {
         rawUsage: Usage;
         billedUsage: Usage;
-        chefTokens: number;
-        chefBreakdown: ChefBreakdown;
+        zapdevTokens: number;
+        zapdevBreakdown: ZapdevBreakdown;
       } | null;
     }[];
     messageSummaryInfo: { numParts: number; numToolInvocations: number; numFailedToolInvocations: number };
     rawUsage: Usage;
     billedUsage: Usage;
-    chefTokens: number;
-    chefBreakdown: ChefBreakdown;
+    zapdevTokens: number;
+    zapdevBreakdown: ZapdevBreakdown;
   }> = [];
 
   for (const [idx, message] of messages.entries()) {
@@ -380,7 +380,7 @@ async function getUsageBreakdown(messages: Message[]) {
       usageAnnotationsForToolCalls: parsedAnnotations.usageForToolCall,
     });
     const provider = parsedAnnotations.modelForToolCall.final?.provider ?? 'Anthropic';
-    const { chefTokens, breakdown } = calculateChefTokens(totalUsageBilledFor, provider);
+    const { zapdevTokens, breakdown } = calculateZapdevTokens(totalUsageBilledFor, provider);
     usagePerMessage.push({
       messageIdx: idx,
       parts: getPartInfos({
@@ -390,8 +390,8 @@ async function getUsageBreakdown(messages: Message[]) {
       }),
       rawUsage: totalRawUsage,
       billedUsage: totalUsageBilledFor,
-      chefTokens,
-      chefBreakdown: breakdown,
+      zapdevTokens,
+      zapdevBreakdown: breakdown,
       messageSummaryInfo: {
         numParts: message.parts?.length ?? 0,
         numToolInvocations: message.parts?.filter((p) => p.type === 'tool-invocation').length ?? 0,
@@ -400,14 +400,14 @@ async function getUsageBreakdown(messages: Message[]) {
     });
     addUsage(chatTotalRawUsage, totalRawUsage);
     addUsage(chatTotalUsageBilledFor, totalUsageBilledFor);
-    addBreakdown(chatTotalChefBreakdown, breakdown);
-    chatTotalChefTokens += chefTokens;
+    addBreakdown(chatTotalZapdevBreakdown, breakdown);
+    chatTotalZapdevTokens += zapdevTokens;
   }
   return {
     chatTotalRawUsage,
     chatTotalUsageBilledFor,
-    chatTotalChefTokens,
-    chatTotalChefBreakdown,
+    chatTotalZapdevTokens,
+    chatTotalZapdevBreakdown,
     usagePerMessage,
   };
 }
@@ -428,8 +428,8 @@ function getPartInfos({
     usageInfo: {
       rawUsage: Usage;
       billedUsage: Usage;
-      chefTokens: number;
-      chefBreakdown: ChefBreakdown;
+      zapdevTokens: number;
+      zapdevBreakdown: ZapdevBreakdown;
     } | null;
   }> = [];
   for (const [idx, part] of message.parts?.entries() ?? []) {
@@ -449,7 +449,7 @@ function getPartInfos({
           })
         : initializeUsage();
       const billedUsageForPart = rawUsageForPart;
-      const { chefTokens, breakdown } = calculateChefTokens(billedUsageForPart, provider);
+      const { zapdevTokens, breakdown } = calculateZapdevTokens(billedUsageForPart, provider);
       partInfos.push({
         partIdx: idx,
         partType: 'tool-invocation',
@@ -457,8 +457,8 @@ function getPartInfos({
         usageInfo: {
           rawUsage: rawUsageForPart,
           billedUsage: billedUsageForPart,
-          chefTokens,
-          chefBreakdown: breakdown,
+          zapdevTokens,
+          zapdevBreakdown: breakdown,
         },
       });
     }
@@ -468,7 +468,7 @@ function getPartInfos({
     providerMetadata: usageAnnotationsForToolCalls.final?.providerMetadata ?? undefined,
   });
   const provider = providerAnnotationsForToolCalls.final?.provider ?? 'Anthropic';
-  const { chefTokens, breakdown } = calculateChefTokens(finalUsage, provider);
+  const { zapdevTokens, breakdown } = calculateZapdevTokens(finalUsage, provider);
   partInfos.push({
     partIdx: message.parts?.length ?? 0,
     partType: 'final',
@@ -476,8 +476,8 @@ function getPartInfos({
     usageInfo: {
       rawUsage: finalUsage,
       billedUsage: finalUsage,
-      chefTokens,
-      chefBreakdown: breakdown,
+      zapdevTokens,
+      zapdevBreakdown: breakdown,
     },
   });
   return partInfos;
@@ -493,7 +493,7 @@ function addUsage(usageA: Usage, update: Usage) {
   usageA.xaiCachedPromptTokens += update.xaiCachedPromptTokens;
 }
 
-type ChefBreakdown = {
+type ZapdevBreakdown = {
   completionTokens: {
     anthropic: number;
     openai: number;
@@ -520,7 +520,7 @@ type ChefBreakdown = {
   };
 };
 
-function addBreakdown(breakdownA: ChefBreakdown, update: ChefBreakdown) {
+function addBreakdown(breakdownA: ZapdevBreakdown, update: ZapdevBreakdown) {
   breakdownA.completionTokens.anthropic += update.completionTokens.anthropic;
   breakdownA.completionTokens.openai += update.completionTokens.openai;
   breakdownA.completionTokens.xai += update.completionTokens.xai;

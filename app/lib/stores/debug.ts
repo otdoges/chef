@@ -46,8 +46,8 @@ export function useDebugState<T extends DebugView>(view: T) {
 
 // Register debug functions on window
 if (typeof window !== 'undefined') {
-  (window as any).__CHEF_DEBUG = (window as any).__CHEF_DEBUG || {};
-  (window as any).__CHEF_DEBUG.debugUsage = () => {
+  (window as any).__ZAPDEV_DEBUG = (window as any).__ZAPDEV_DEBUG || {};
+  (window as any).__ZAPDEV_DEBUG.debugUsage = () => {
     debugVisibilityStore.setKey('usage', true);
     debugOverrideEnabledStore.setKey('usage', true);
   };

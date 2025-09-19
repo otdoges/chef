@@ -5,10 +5,10 @@ import os from 'os';
 import JSZip from 'jszip';
 import portfinder from 'portfinder';
 import { ChildProcess, spawn } from 'child_process';
-import type { ConvexProject } from 'chef-agent/types.js';
-import { cleanConvexOutput } from 'chef-agent/utils/shell.js';
+import type { ConvexProject } from 'zapdev-agent/types.js';
+import { cleanConvexOutput } from 'zapdev-agent/utils/shell.js';
 import { execFile } from './utils.js';
-import { logger } from 'chef-agent/utils/logger.js';
+import { logger } from 'zapdev-agent/utils/logger.js';
 import { wrapTraced } from 'braintrust';
 
 const instance_name = 'carnitas';
@@ -72,8 +72,8 @@ export async function withConvexBackend<T>(backendDir: string, fn: (backend: Con
     const project = {
       deploymentUrl: `http://localhost:${port}`,
       deploymentName: instance_name,
-      projectSlug: 'chef',
-      teamSlug: 'chef',
+      projectSlug: 'zapdev',
+      teamSlug: 'zapdev',
       token: admin_key,
     };
     return await fn({ port, siteProxyPort, process, project });

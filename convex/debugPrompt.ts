@@ -24,7 +24,7 @@ export const storeDebugPrompt = internalMutation({
     finishReason: v.string(),
     modelId: v.optional(v.string()),
     usage: usageRecordValidator,
-    chefTokens: v.number(),
+    zapdevTokens: v.number(),
   },
   handler: async (ctx, args) => {
     const {
@@ -34,7 +34,7 @@ export const storeDebugPrompt = internalMutation({
       finishReason,
       modelId,
       usage,
-      chefTokens,
+      zapdevTokens,
     } = args;
     const chat = await getChatByInitialId(ctx, chatInitialId);
     await ctx.db.insert("debugChatApiRequestLog", {
@@ -45,7 +45,7 @@ export const storeDebugPrompt = internalMutation({
       finishReason,
       modelId: modelId ?? "",
       usage,
-      chefTokens,
+      zapdevTokens,
     });
   },
 });

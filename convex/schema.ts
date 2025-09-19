@@ -195,6 +195,153 @@ export default defineSchema({
     .index("byMemberId", ["memberId"])
     .index("byToken", ["token"]),
 
+  taskQueue: defineTable({
+    type: v.string(),
+    payload: v.any(),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed"),
+      v.literal("cancelled"),
+    ),
+    priority: v.optional(v.number()),
+    attempts: v.number(),
+    scheduledFor: v.optional(v.number()),
+    createdAt: v.number(),
+    startedAt: v.optional(v.number()),
+    completedAt: v.optional(v.number()),
+    resultSummary: v.optional(v.string()),
+    lastError: v.optional(v.string()),
+  })
+    .index("byStatus", ["status", "type"])
+    .index("byCreatedAt", ["createdAt"]),
+
+  aiAgents: defineTable({
+    name: v.string(),
+    kind: v.union(v.literal("human"), v.literal("ai")),
+    capabilities: v.array(v.string()),
+    status: v.union(v.literal("available"), v.literal("busy"), v.literal("offline")),
+    currentTaskId: v.optional(v.id("taskQueue")),
+    loadFactor: v.optional(v.number()),
+    performanceMetrics: v.optional(
+      v.object({
+        successRate: v.optional(v.number()),
+        avgCycleTimeMinutes: v.optional(v.number()),
+        lastAssignmentAt: v.optional(v.number()),
+      }),
+    ),
+    avatarUrl: v.optional(v.string()),
+    contact: v.optional(v.string()),
+  })
+    .index("byStatus", ["status"])
+    .index("byCapability", ["kind", "status"]),
+
+  issues: defineTable({
+    repoId: v.string(),
+    repoFullName: v.string(),
+    githubIssueId: v.string(),
+    issueNumber: v.number(),
+    title: v.string(),
+    body: v.optional(v.string()),
+    labels: v.array(v.string()),
+    priorityScore: v.optional(v.number()),
+    priorityReason: v.optional(v.string()),
+    severity: v.optional(v.string()),
+    status: v.string(),
+    assignedAgentId: v.optional(v.id("aiAgents")),
+    clusterId: v.optional(v.id("issueClusters")),
+    lastActivityAt: v.number(),
+    githubUpdatedAt: v.number(),
+    metadata: v.optional(v.any()),
+  })
+    .index("byRepoAndStatus", ["repoId", "status"])
+    .index("byAssignedAgent", ["assignedAgentId", "status"])
+    .index("byStatusAndPriority", ["status", "priorityScore"])
+    .index("byGithubId", ["githubIssueId"]),
+
+  issueClusters: defineTable({
+    repoId: v.string(),
+    label: v.string(),
+    summary: v.optional(v.string()),
+    embeddingStorageId: v.optional(v.id("_storage")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("byRepo", ["repoId"])
+    .index("byLabel", ["repoId", "label"]),
+
+  codeGenerations: defineTable({
+    issueId: v.id("issues"),
+    agentId: v.optional(v.id("aiAgents")),
+    language: v.string(),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("generating"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+    artifactStorageId: v.optional(v.id("_storage")),
+    testArtifactStorageId: v.optional(v.id("_storage")),
+    documentationStorageId: v.optional(v.id("_storage")),
+    summary: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    runId: v.optional(v.id("taskQueue")),
+    metadata: v.optional(v.any()),
+  })
+    .index("byIssue", ["issueId", "status"])
+    .index("byAgent", ["agentId", "status"]),
+
+  executionLogs: defineTable({
+    codeGenerationId: v.id("codeGenerations"),
+    sandboxId: v.string(),
+    stdout: v.optional(v.string()),
+    stderr: v.optional(v.string()),
+    exitCode: v.optional(v.number()),
+    executionTimeMs: v.optional(v.number()),
+    resourceUsage: v.optional(
+      v.object({
+        cpuMs: v.optional(v.number()),
+        memoryMb: v.optional(v.number()),
+      }),
+    ),
+    createdAt: v.number(),
+  })
+    .index("byCodeGeneration", ["codeGenerationId", "createdAt"]),
+
+  pullRequests: defineTable({
+    issueId: v.id("issues"),
+    repoId: v.string(),
+    branchName: v.string(),
+    prNumber: v.optional(v.number()),
+    prUrl: v.optional(v.string()),
+    status: v.union(
+      v.literal("draft"),
+      v.literal("open"),
+      v.literal("merged"),
+      v.literal("closed"),
+    ),
+    mergeStatus: v.optional(v.string()),
+    reviewers: v.array(v.string()),
+    lastSyncAt: v.number(),
+    metadata: v.optional(v.any()),
+  })
+    .index("byIssue", ["issueId"])
+    .index("byRepo", ["repoId", "status"]),
+
+  auditEvents: defineTable({
+    entityType: v.string(),
+    entityId: v.string(),
+    action: v.string(),
+    actorId: v.optional(v.id("aiAgents")),
+    payload: v.optional(v.any()),
+    createdAt: v.number(),
+    requestId: v.optional(v.string()),
+  })
+    .index("byEntity", ["entityType", "entityId"])
+    .index("byActor", ["actorId", "createdAt"]),
+
   /*
    * The entire prompt sent to a LLM and the response we received.
    * Associated with an initialChatId but does not reset on rewind
@@ -223,7 +370,7 @@ export default defineSchema({
     // - usage code uses the provider for the final generation to bill for all LLM calls in the same interation
     //   but this debug info uses the correct provider for each call
     usage: usageRecordValidator,
-    chefTokens: v.number(),
+    zapdevTokens: v.number(),
   })
     .index("byChatId", ["chatId"])
     .index("byStorageId", ["promptCoreMessagesStorageId"]),

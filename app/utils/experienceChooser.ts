@@ -1,18 +1,18 @@
 import { UAParser } from 'ua-parser-js';
 
 /**
- * The full Chef experience doesn't work in Safari.
+ * The full Zapdev experience doesn't work in Safari.
  * The biggest limitation is the preview iframe: if this popped out, it seems like Safari
  * could be supported.
- * - https://webcontainers.io/guides/browser-support#web-platform-requirements
- * - https://blog.stackblitz.com/posts/cross-browser-with-coop-coep/
+ * - Browser support requirements for E2B Code Interpreter
+ * - Cross-origin isolation requirements
  *
  * For now we're not even trying on Safari.
  */
 export type Experience =
   // This mobile device WILL NOT WORK, force marketing page
   | 'marketing-page-only-for-mobile'
-  // We've never seen Safari work on Bolt.new, don't even try until that works
+  // We've never seen Safari work on Zapdev, don't even try until that works
   | 'marketing-page-only-for-desktop-safari'
   // If we know it won't work (e.g. no window.crossOriginIsolated) don't even try
   | 'marketing-page-only-for-desktop'
@@ -49,7 +49,7 @@ export function chooseExperience(userAgent: string, crossOriginIsolated: boolean
     return 'marketing-page-only-for-desktop';
   }
 
-  // We've never seen Bolt work in Safari so don't even try.
+  // We've never seen Zapdev work in Safari so don't even try.
   // There is no real Chrome for iOS, Chrome and Firefox are just Safari.
   if (browser.name === 'Safari') {
     return 'marketing-page-only-for-desktop-safari';

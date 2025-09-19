@@ -226,7 +226,7 @@ export const createAdminShare = internalMutation({
       .withIndex("byChatId", (q) => q.eq("chatId", chatId))
       .unique();
     if (existing) {
-      console.log(`Already have a share for chat ${chatId}: Go to https://chef.show/${existing.code}`);
+      console.log(`Already have a share for chat ${chatId}: Go to https://zapdev.show/${existing.code}`);
       return existing._id;
     }
 
@@ -240,7 +240,7 @@ export const createAdminShare = internalMutation({
       allowForkFromLatest: true,
       allowShowInGallery: false,
     });
-    console.log(`Created admin share for chat ${chatId}. Go to https://chef.show/${code}`);
+    console.log(`Created admin share for chat ${chatId}. Go to https://zapdev.show/${code}`);
     return id;
   },
 });

@@ -1,13 +1,14 @@
-const clientId = process.env.WORKOS_CLIENT_ID;
+const clerkDomain = process.env.CLERK_JWT_ISSUER_DOMAIN;
 
 export default {
   providers: [
     {
       type: "customJwt",
-      issuer: `https://apiauth.convex.dev/user_management/${clientId}`,
+      issuer: `https://${clerkDomain}`,
+      // Clerk JWTs use RS256 and expose JWKS at /.well-known/jwks.json
       algorithm: "RS256",
-      jwks: `https://apiauth.convex.dev/sso/jwks/${clientId}`,
-      applicationID: clientId,
+      jwks: `https://${clerkDomain}/.well-known/jwks.json`,
+      applicationID: process.env.CLERK_PUBLISHABLE_KEY,
     },
   ],
 };

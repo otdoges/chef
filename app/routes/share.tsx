@@ -3,7 +3,7 @@ import { useStore } from '@nanostores/react';
 import type { LinksFunction } from '@vercel/remix';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteError } from '@remix-run/react';
 import { themeStore } from '~/lib/stores/theme';
-import { stripIndents } from 'chef-agent/utils/stripIndent';
+import { stripIndents } from 'zapdev-agent/utils/stripIndent';
 import { createHead } from 'remix-island';
 import { useEffect } from 'react';
 import { ConvexProvider, ConvexReactClient } from 'convex/react';

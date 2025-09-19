@@ -10,11 +10,11 @@ import { chatStore } from '~/lib/stores/chatId';
 import { workbenchStore } from '~/lib/stores/workbench.client';
 import { MAX_CONSECUTIVE_DEPLOY_ERRORS, type ModelSelection } from '~/utils/constants';
 import { cubicEasingFn } from '~/utils/easings';
-import { createScopedLogger } from 'chef-agent/utils/logger';
+import { createScopedLogger } from 'zapdev-agent/utils/logger';
 import { BaseChat } from './BaseChat.client';
 import { createSampler } from '~/utils/sampler';
 import { filesToArtifacts } from '~/utils/fileUtils';
-import { ChatContextManager } from 'chef-agent/ChatContextManager';
+import { ChatContextManager } from 'zapdev-agent/ChatContextManager';
 import { selectedTeamSlugStore, setSelectedTeamSlug, useSelectedTeamSlug } from '~/lib/stores/convexTeams';
 import { convexProjectStore } from '~/lib/stores/convexProject';
 import { toast } from 'sonner';
@@ -36,7 +36,7 @@ import { useConvexSessionIdOrNullOrLoading } from '~/lib/stores/sessionId';
 import type { Id } from 'convex/_generated/dataModel';
 import { VITE_PROVISION_HOST } from '~/lib/convexProvisionHost';
 import type { ProviderType } from '~/lib/common/annotations';
-import { setChefDebugProperty } from 'chef-agent/utils/chefDebug';
+import { setZapdevDebugProperty } from 'zapdev-agent/utils/zapdevDebug';
 import { MissingApiKey } from './MissingApiKey';
 import { models, type ModelProvider } from '~/components/chat/ModelSelector';
 import { useLaunchDarkly } from '~/lib/hooks/useLaunchDarkly';
@@ -193,27 +193,10 @@ export const Chat = memo(
           return { hasMissingKey: false, requireKey: false };
         }
 
-        // Map models to their respective providers
-        const MODEL_TO_PROVIDER_MAP: {
-          [K in ModelSelection]: { providerName: ModelProvider; apiKeyField: 'value' | 'openai' | 'xai' | 'google' };
-        } = {
-          auto: { providerName: 'anthropic', apiKeyField: 'value' },
-          'claude-4-sonnet': { providerName: 'anthropic', apiKeyField: 'value' },
-          'gpt-4.1': { providerName: 'openai', apiKeyField: 'openai' },
-          'gpt-5': { providerName: 'openai', apiKeyField: 'openai' },
-          'grok-3-mini': { providerName: 'xai', apiKeyField: 'xai' },
-          'gemini-2.5-pro': { providerName: 'google', apiKeyField: 'google' },
-          'claude-3-5-haiku': { providerName: 'anthropic', apiKeyField: 'value' },
-          'gpt-4.1-mini': { providerName: 'openai', apiKeyField: 'openai' },
-        };
-
-        // Get provider info for the current model
-        const providerInfo = MODEL_TO_PROVIDER_MAP[model];
-
-        // Check if the API key for this provider is missing
-        const keyValue = apiKey?.[providerInfo.apiKeyField];
+        // All models now use OpenRouter, so check for OpenRouter API key
+        const keyValue = apiKey?.openrouter || apiKey?.value; // Support legacy 'value' field
         if (!keyValue || keyValue.trim() === '') {
-          return { hasMissingKey: true, provider: providerInfo.providerName, requireKey };
+          return { hasMissingKey: true, provider: 'openrouter', requireKey };
         }
 
         return { hasMissingKey: false, requireKey };
@@ -235,8 +218,6 @@ export const Chat = memo(
 
     const [sendMessageInProgress, setSendMessageInProgress] = useState(false);
 
-    const anthropicProviders: ProviderType[] =
-      Math.random() < useAnthropicFraction ? ['Anthropic', 'Bedrock'] : ['Bedrock', 'Anthropic'];
 
     const checkTokenUsage = useCallback(async () => {
       if (hasApiKeySet(modelSelection, useGeminiAuto, apiKey)) {
@@ -292,36 +273,9 @@ export const Chat = memo(
         if (!teamSlug) {
           throw new Error('No team slug');
         }
-        let modelProvider: ProviderType;
-        const retries = retryState.get();
-        let modelChoice: string | undefined = undefined;
-        if (modelSelection === 'auto') {
-          const providers: ProviderType[] = anthropicProviders;
-          modelProvider = providers[retries.numFailures % providers.length];
-          modelChoice = 'claude-sonnet-4-0';
-        } else if (modelSelection === 'claude-3-5-haiku') {
-          modelProvider = 'Anthropic';
-          modelChoice = 'claude-3-5-haiku-latest';
-        } else if (modelSelection === 'claude-4-sonnet') {
-          const providers: ProviderType[] = anthropicProviders;
-          modelProvider = providers[retries.numFailures % providers.length];
-          modelChoice = 'claude-sonnet-4-0';
-        } else if (modelSelection === 'grok-3-mini') {
-          modelProvider = 'XAI';
-        } else if (modelSelection === 'gemini-2.5-pro') {
-          modelProvider = 'Google';
-        } else if (modelSelection === 'gpt-4.1-mini') {
-          modelProvider = 'OpenAI';
-          modelChoice = 'gpt-4.1-mini';
-        } else if (modelSelection === 'gpt-4.1') {
-          modelProvider = 'OpenAI';
-        } else if (modelSelection === 'gpt-5') {
-          modelProvider = 'OpenAI';
-          modelChoice = 'gpt-5';
-        } else {
-          const _exhaustiveCheck: never = modelSelection;
-          throw new Error(`Unknown model: ${_exhaustiveCheck}`);
-        }
+        // All models now use OpenRouter
+        const modelProvider: ProviderType = 'OpenRouter';
+        const modelChoice: string | undefined = modelSelection;
         let shouldDisableTools = false;
         if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
           const lastSystemMessage = messages[messages.length - 1];
@@ -422,12 +376,12 @@ export const Chat = memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [setMessages, syncState.subchatIndex]);
 
-    setChefDebugProperty('messages', messages);
+    setZapdevDebugProperty('messages', messages);
 
     // AKA "processed messages," since parsing has side effects
     const { parsedMessages, parseMessages } = useMessageParser(partCache);
 
-    setChefDebugProperty('parsedMessages', parsedMessages);
+    setZapdevDebugProperty('parsedMessages', parsedMessages);
 
     useEffect(() => {
       chatStore.setKey('started', messages.length > 0 || (!!subchats && subchats.length > 1));
@@ -474,13 +428,13 @@ export const Chat = memo(
         (retries.numFailures >= MAX_RETRIES || now < retries.nextRetry) &&
         !hasApiKeySet(modelSelection, useGeminiAuto, apiKey)
       ) {
-        let message: string | ReactNode = 'Chef is too busy cooking right now. ';
+        let message: string | ReactNode = 'Zapdev is too busy cooking right now. ';
         if (retries.numFailures >= MAX_RETRIES) {
           message = (
             <>
               {message}
               Please{' '}
-              <a href="https://chef.convex.dev/settings" className="text-content-link hover:underline">
+              <a href="https://zapdev.convex.dev/settings" className="text-content-link hover:underline">
                 enter your own API key
               </a>
               .
@@ -492,7 +446,7 @@ export const Chat = memo(
             <>
               {message}
               Please try again in {remaining} or{' '}
-              <a href="https://chef.convex.dev/settings" className="text-content-link hover:underline">
+              <a href="https://zapdev.convex.dev/settings" className="text-content-link hover:underline">
                 enter your own API key
               </a>
               .
@@ -500,7 +454,7 @@ export const Chat = memo(
           );
         }
         toast.error(message);
-        captureMessage('User tried to send message but chef is too busy');
+        captureMessage('User tried to send message but zapdev is too busy');
         return;
       }
 
@@ -739,8 +693,8 @@ export function NoTokensText({ resetDisableChatMessage }: { resetDisableChatMess
         <Button
           href={
             selectedTeamSlug
-              ? `https://dashboard.convex.dev/t/${selectedTeamSlug}/settings/billing?source=chef`
-              : 'https://dashboard.convex.dev/team/settings/billing?source=chef'
+              ? `https://dashboard.convex.dev/t/${selectedTeamSlug}/settings/billing?source=zapdev`
+              : 'https://dashboard.convex.dev/team/settings/billing?source=zapdev'
           }
           className="w-fit"
           icon={<ExternalLinkIcon />}
@@ -750,20 +704,20 @@ export function NoTokensText({ resetDisableChatMessage }: { resetDisableChatMess
         {referralCode && referralStats?.left !== 0 && (
           <div className="w-full space-y-2">
             <p className="text-sm text-content-secondary">
-              Refer a friend and Get 85,000 free Chef tokens for each
+              Refer a friend and Get 85,000 free Zapdev tokens for each
               {referralStats?.left === 5 || !referralStats ? ' (limit 5)' : ` (${referralStats.left} / 5)`}
             </p>
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 readOnly
-                value={`https://convex.dev/try-chef/${referralCode}`}
+                value={`https://convex.dev/try-zapdev/${referralCode}`}
                 className="flex-1 rounded-md border bg-bolt-elements-background-depth-2 px-3 py-1.5 text-sm text-content-primary"
               />
               <Button
                 variant="neutral"
                 size="xs"
-                onClick={() => copyToClipboard(`https://convex.dev/try-chef/${referralCode}`)}
+                onClick={() => copyToClipboard(`https://convex.dev/try-zapdev/${referralCode}`)}
                 tip="Copy link"
                 icon={<ClipboardIcon />}
               />
@@ -801,8 +755,8 @@ export function DisabledText({
         <Button
           href={
             selectedTeamSlug
-              ? `https://dashboard.convex.dev/t/${selectedTeamSlug}/settings/billing?source=chef`
-              : 'https://dashboard.convex.dev/team/settings/billing?source=chef'
+              ? `https://dashboard.convex.dev/t/${selectedTeamSlug}/settings/billing?source=zapdev`
+              : 'https://dashboard.convex.dev/team/settings/billing?source=zapdev'
           }
           className="w-fit"
           icon={<ExternalLinkIcon />}

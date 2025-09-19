@@ -1,12 +1,12 @@
 import { useTeamsInitializer } from '~/lib/stores/startup/useTeamsInitializer';
-import { ChefAuthProvider } from '~/components/chat/ChefAuthWrapper';
+import { ZapdevAuthProvider } from '~/components/chat/ZapdevAuthWrapper';
 import { json } from '@vercel/remix';
 import type { LoaderFunctionArgs, MetaFunction } from '@vercel/remix';
 import { SettingsContent } from '~/components/SettingsContent.client';
 import { ClientOnly } from 'remix-utils/client-only';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Settings | Chef' }];
+  return [{ title: 'Settings | Zapdev' }];
 };
 
 export const loader = async (args: LoaderFunctionArgs) => {
@@ -25,8 +25,8 @@ export default function Settings() {
   useTeamsInitializer();
 
   return (
-    <ChefAuthProvider redirectIfUnauthenticated={true}>
+    <ZapdevAuthProvider redirectIfUnauthenticated={true}>
       <ClientOnly>{() => <SettingsContent />}</ClientOnly>
-    </ChefAuthProvider>
+    </ZapdevAuthProvider>
   );
 }

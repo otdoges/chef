@@ -2,7 +2,7 @@ import fs from 'fs';
 import * as lz4 from 'lz4-wasm-nodejs';
 
 // Usage `node parse-compressed-messages.mjs <path-to-file> | jq`
-// e.g. a file downloaded from the Chef backend containing message history
+// e.g. a file downloaded from the Zapdev backend containing message history
 
 // Check if file path is provided
 if (process.argv.length < 3) {

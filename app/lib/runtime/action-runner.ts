@@ -1,31 +1,33 @@
-import type { WebContainer } from '@webcontainer/api';
-import { path as nodePath } from 'chef-agent/utils/path';
+import type { CodeInterpreter } from '@e2b/code-interpreter';
+import { path as nodePath } from 'zapdev-agent/utils/path';
 import { atom, map, type MapStore, type WritableAtom } from 'nanostores';
 import type { ActionAlert, FileHistory } from '~/types/actions';
-import { createScopedLogger } from 'chef-agent/utils/logger';
-import { unreachable } from 'chef-agent/utils/unreachable';
-import type { ActionCallbackData } from 'chef-agent/message-parser';
+import { createScopedLogger } from 'zapdev-agent/utils/logger';
+import { unreachable } from 'zapdev-agent/utils/unreachable';
+import type { ActionCallbackData } from 'zapdev-agent/message-parser';
 import type { ToolInvocation } from 'ai';
-import { viewParameters } from 'chef-agent/tools/view';
-import { renderDirectory } from 'chef-agent/utils/renderDirectory';
-import { renderFile } from 'chef-agent/utils/renderFile';
+import { viewParameters } from 'zapdev-agent/tools/view';
+import { renderDirectory } from 'zapdev-agent/utils/renderDirectory';
+import { renderFile } from 'zapdev-agent/utils/renderFile';
 import { readPath, workDirRelative } from '~/utils/fileUtils';
 import { ContainerBootState, waitForContainerBootState } from '~/lib/stores/containerBootState';
-import { npmInstallToolParameters } from 'chef-agent/tools/npmInstall';
+import { npmInstallToolParameters } from 'zapdev-agent/tools/npmInstall';
 import { workbenchStore } from '~/lib/stores/workbench.client';
 import { z } from 'zod';
-import { editToolParameters } from 'chef-agent/tools/edit';
-import { getAbsolutePath } from 'chef-agent/utils/workDir';
-import { cleanConvexOutput } from 'chef-agent/utils/shell';
-import type { BoltAction } from 'chef-agent/types';
-import type { BoltShell } from '~/utils/shell';
-import { streamOutput } from '~/utils/process';
+import { editToolParameters } from 'zapdev-agent/tools/edit';
+import { getAbsolutePath } from 'zapdev-agent/utils/workDir';
+import { cleanConvexOutput } from 'zapdev-agent/utils/shell';
+import type { BoltAction } from 'zapdev-agent/types';
+import type { E2BShell } from '~/utils/shell';
 import { outputLabels, type OutputLabels } from '~/lib/runtime/deployToolOutputLabels';
 import type { ConvexToolName } from '~/lib/common/types';
-import { lookupDocsParameters, docs, type DocKey } from 'chef-agent/tools/lookupDocs';
-import { addEnvironmentVariablesParameters } from 'chef-agent/tools/addEnvironmentVariables';
+import { lookupDocsParameters, docs, type DocKey } from 'zapdev-agent/tools/lookupDocs';
+import { firecrawlToolParameters } from 'zapdev-agent/tools/firecrawl';
+import { addEnvironmentVariablesParameters } from 'zapdev-agent/tools/addEnvironmentVariables';
 import { openDashboardToPath } from '~/lib/stores/dashboardPath';
 import { convexProjectStore } from '~/lib/stores/convexProject';
+import { executeCommand, writeFile, readFile } from '~/lib/e2b';
+import { WORK_DIR } from 'zapdev-agent/constants';
 
 const logger = createScopedLogger('ActionRunner');
 
@@ -85,9 +87,9 @@ class ActionCommandError extends Error {
 }
 
 export class ActionRunner {
-  #webcontainer: Promise<WebContainer>;
+  #codeInterpreter: Promise<CodeInterpreter>;
   #currentExecutionPromise: Promise<void> = Promise.resolve();
-  #shellTerminal: BoltShell;
+  #shellTerminal: E2BShell;
   #previousToolCalls: Map<string, { toolName: string; args: any }> = new Map();
   runnerId = atom<string>(`${Date.now()}`);
   actions: ActionsMap = map({});
@@ -100,9 +102,10 @@ export class ActionRunner {
     toolCallId: string;
     toolName: ConvexToolName;
   }) => void;
+  
   constructor(
-    webcontainerPromise: Promise<WebContainer>,
-    shellTerminal: BoltShell,
+    codeInterpreterPromise: Promise<CodeInterpreter>,
+    shellTerminal: E2BShell,
     callbacks: {
       onAlert?: (alert: ActionAlert) => void;
       onToolCallComplete: (args: {
@@ -113,7 +116,7 @@ export class ActionRunner {
       }) => void;
     },
   ) {
-    this.#webcontainer = webcontainerPromise;
+    this.#codeInterpreter = codeInterpreterPromise;
     this.#shellTerminal = shellTerminal;
     this.onAlert = callbacks.onAlert;
     this.onToolCallComplete = callbacks.onToolCallComplete;
@@ -259,28 +262,14 @@ export class ActionRunner {
       unreachable('Expected file action');
     }
 
-    const webcontainer = await this.#webcontainer;
-    const relativePath = nodePath.relative(webcontainer.workdir, action.filePath);
-
-    let folder = nodePath.dirname(relativePath);
-
-    // remove trailing slashes
-    folder = folder.replace(/\/+$/g, '');
-
-    if (folder !== '.') {
-      try {
-        await webcontainer.fs.mkdir(folder, { recursive: true });
-        logger.debug('Created folder', folder);
-      } catch (error) {
-        logger.error('Failed to create folder\n\n', error);
-      }
-    }
+    const relativePath = nodePath.relative(WORK_DIR, action.filePath);
 
     try {
-      await webcontainer.fs.writeFile(relativePath, action.content);
+      await writeFile(relativePath, action.content);
       logger.debug(`File written ${relativePath}`);
     } catch (error) {
       logger.error('Failed to write file\n\n', error);
+      throw error;
     }
   }
 
@@ -292,9 +281,8 @@ export class ActionRunner {
 
   async getFileHistory(filePath: string): Promise<FileHistory | null> {
     try {
-      const webcontainer = await this.#webcontainer;
       const historyPath = this.#getHistoryPath(filePath);
-      const content = await webcontainer.fs.readFile(historyPath, 'utf-8');
+      const content = await readFile(historyPath);
 
       return JSON.parse(content);
     } catch (error) {
@@ -304,7 +292,6 @@ export class ActionRunner {
   }
 
   async saveFileHistory(filePath: string, history: FileHistory) {
-    // const webcontainer = await this.#webcontainer;
     const historyPath = this.#getHistoryPath(filePath);
 
     await this.#runFileAction({
@@ -338,65 +325,72 @@ export class ActionRunner {
       switch (parsed.toolName) {
         case 'view': {
           const args = viewParameters.parse(parsed.args);
-          const container = await this.#webcontainer;
           const relPath = workDirRelative(args.path);
-          const file = await readPath(container, relPath);
-          if (file.type === 'directory') {
-            result = renderDirectory(file.children);
-          } else {
+          
+          try {
+            const content = await readFile(relPath);
             if (args.view_range && args.view_range.length !== 2) {
               throw new Error('When provided, view_range must be an array of two numbers');
             }
-            result = renderFile(file.content, args.view_range as [number, number]);
+            result = renderFile(content, args.view_range as [number, number]);
+          } catch (error) {
+            // Try to list directory if file read fails
+            try {
+              const { listFiles } = await import('~/lib/e2b');
+              const files = await listFiles(relPath);
+              const children = files.reduce((acc, file) => {
+                acc[file.name] = { type: file.type as 'file' | 'directory' };
+                return acc;
+              }, {} as Record<string, { type: 'file' | 'directory' }>);
+              result = renderDirectory(children);
+            } catch {
+              throw new Error(`Could not read file or directory: ${relPath}`);
+            }
           }
           break;
         }
         case 'edit': {
           const args = editToolParameters.parse(parsed.args);
-          const container = await this.#webcontainer;
           const relPath = workDirRelative(args.path);
-          const file = await readPath(container, relPath);
-          if (file.type !== 'file') {
-            throw new Error('Expected a file');
+          
+          try {
+            const content = await readFile(relPath);
+            
+            if (args.old.length > 1024) {
+              throw new Error(`Old text must be less than 1024 characters: ${args.old}`);
+            }
+            if (args.new.length > 1024) {
+              throw new Error(`New text must be less than 1024 characters: ${args.new}`);
+            }
+            const matchPos = content.indexOf(args.old);
+            if (matchPos === -1) {
+              throw new Error(`Old text not found: ${args.old}`);
+            }
+            const secondMatchPos = content.indexOf(args.old, matchPos + args.old.length);
+            if (secondMatchPos !== -1) {
+              throw new Error(`Old text found multiple times: ${args.old}`);
+            }
+            const newContent = content.replace(args.old, args.new);
+            await writeFile(relPath, newContent);
+            result = `Successfully edited ${args.path}`;
+          } catch (error) {
+            throw new Error(`Failed to edit file ${relPath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
-          let content = file.content;
-          if (args.old.length > 1024) {
-            throw new Error(`Old text must be less than 1024 characters: ${args.old}`);
-          }
-          if (args.new.length > 1024) {
-            throw new Error(`New text must be less than 1024 characters: ${args.new}`);
-          }
-          const matchPos = content.indexOf(args.old);
-          if (matchPos === -1) {
-            throw new Error(`Old text not found: ${args.old}`);
-          }
-          const secondMatchPos = content.indexOf(args.old, matchPos + args.old.length);
-          if (secondMatchPos !== -1) {
-            throw new Error(`Old text found multiple times: ${args.old}`);
-          }
-          content = content.replace(args.old, args.new);
-          await container.fs.writeFile(relPath, content);
-          result = `Successfully edited ${args.path}`;
           break;
         }
         case 'npmInstall': {
           try {
             const args = npmInstallToolParameters.parse(parsed.args);
-            const container = await this.#webcontainer;
             await waitForContainerBootState(ContainerBootState.READY);
-            const npmInstallProc = await container.spawn('npm', ['install', ...args.packages.split(' ')]);
-            action.abortSignal.addEventListener('abort', () => {
-              npmInstallProc.kill();
-            });
-            const { output, exitCode } = await streamOutput(npmInstallProc, {
-              onOutput: (output) => {
-                this.terminalOutput.set(output);
-              },
-              debounceMs: 50,
-            });
-            const cleanedOutput = cleanConvexOutput(output);
-            if (exitCode !== 0) {
-              throw new Error(`Npm install failed with exit code ${exitCode}: ${cleanedOutput}`);
+            
+            const command = `npm install ${args.packages}`;
+            const commandResult = await executeCommand(command);
+            
+            this.terminalOutput.set(commandResult.stdout + commandResult.stderr);
+            
+            const cleanedOutput = cleanConvexOutput(commandResult.stdout + commandResult.stderr);
+            if (commandResult.exitCode !== 0) {
+              throw new Error(`Npm install failed with exit code ${commandResult.exitCode}: ${cleanedOutput}`);
             }
             result = cleanedOutput;
           } catch (error: unknown) {
@@ -426,67 +420,86 @@ export class ActionRunner {
           result = results.join('\n\n');
           break;
         }
+        case 'firecrawl': {
+          try {
+            const args = firecrawlToolParameters.parse(parsed.args);
+            const response = await fetch('/api/firecrawl', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                url: args.url,
+                format: args.format ?? 'markdown',
+                includeMetadata: args.includeMetadata ?? true,
+              }),
+            });
+
+            const responseBody = await response.json().catch(() => null);
+            if (!response.ok) {
+              const errorMessage = typeof responseBody?.error === 'string'
+                ? responseBody.error
+                : `Firecrawl request failed with status ${response.status}`;
+              throw new Error(errorMessage);
+            }
+
+            if (!responseBody || typeof responseBody.content !== 'string') {
+              result = 'Error: Firecrawl returned an unexpected response.';
+              break;
+            }
+
+            const metadata = responseBody.metadata ? `\n\n---\n\n**Metadata**\n\n\`\`\`json\n${JSON.stringify(responseBody.metadata, null, 2)}\n\`\`\`` : '';
+            result = `## Firecrawl results for ${responseBody.url || args.url}\n\n${responseBody.content}${metadata}`;
+          } catch (error) {
+            if (error instanceof z.ZodError) {
+              result = `Error: Invalid Firecrawl arguments. ${error.message}`;
+            } else if (error instanceof Error) {
+              result = `Error: ${error.message}`;
+            } else {
+              result = 'Error: Failed to fetch content with Firecrawl.';
+            }
+          }
+          break;
+        }
         case 'deploy': {
-          const container = await this.#webcontainer;
           await waitForContainerBootState(ContainerBootState.READY);
 
           result = '';
 
-          const commandErroredController = new AbortController();
-          const abortSignal = AbortSignal.any([action.abortSignal, commandErroredController.signal]);
-
-          /** Return a promise of output on success, throws an error containing output on failure. */
+          /** Execute command and return output on success, throws error on failure. */
           const run = async (
-            commandAndArgs: string[],
+            command: string,
             errorPrefix: OutputLabels,
             onOutput?: (s: string) => void,
           ): Promise<string> => {
             logger.info('starting to run', errorPrefix);
             const t0 = performance.now();
-            const proc = await container.spawn(commandAndArgs[0], commandAndArgs.slice(1));
-            const abortListener: () => void = () => proc.kill();
-            abortSignal.addEventListener('abort', () => {
-              logger.info('aborting', commandAndArgs);
-              proc.kill();
-            });
-            const { output, exitCode } = await streamOutput(proc, { onOutput, debounceMs: 50 });
+            
+            const commandResult = await executeCommand(command);
+            const output = commandResult.stdout + commandResult.stderr;
+            
+            if (onOutput) {
+              onOutput(output);
+            }
 
             const cleanedOutput = cleanConvexOutput(output);
             const time = performance.now() - t0;
             logger.debug('finished', errorPrefix, 'in', Math.round(time));
-            if (exitCode !== 0) {
-              // Kill all other commands
-              commandErroredController.abort(`${errorPrefix}`);
-              // This command's output will be reported exclusively
-              throw new Error(`[${errorPrefix}] Failed with exit code ${exitCode}: ${cleanedOutput}`);
+            
+            if (commandResult.exitCode !== 0) {
+              throw new Error(`[${errorPrefix}] Failed with exit code ${commandResult.exitCode}: ${cleanedOutput}`);
             }
-            abortSignal.removeEventListener('abort', abortListener);
+            
             if (cleanedOutput.trim().length === 0) {
               return '';
             }
             return cleanedOutput + '\n\n';
           };
 
-          //         START         deploy tool call
-          //          /
-          //         /
-          //  codegen              `convex typecheck` includes typecheck of convex/ dir
-          // + typecheck
-          //       |
-          //       |
-          // app typecheck         `tsc --noEmit --project tsconfig.app.json
-          //         \
-          //          \
-          //         deploy        `deploy` can fail
-
           const runCodegenAndTypecheck = async (onOutput?: (output: string) => void) => {
             // Convex codegen does a convex directory typecheck, then tsc does a full-project typecheck.
-            let output = await run(['convex', 'codegen'], outputLabels.convexTypecheck, onOutput);
-            output += await run(
-              ['tsc', '--noEmit', '-p', 'tsconfig.app.json'],
-              outputLabels.frontendTypecheck,
-              onOutput,
-            );
+            let output = await run('convex codegen', outputLabels.convexTypecheck, onOutput);
+            output += await run('tsc --noEmit -p tsconfig.app.json', outputLabels.frontendTypecheck, onOutput);
             return output;
           };
 
@@ -494,13 +507,13 @@ export class ActionRunner {
           result += await runCodegenAndTypecheck((output) => {
             this.terminalOutput.set(output);
           });
-          result += await run(['convex', 'dev', '--once', '--typecheck=disable'], outputLabels.convexDeploy);
+          result += await run('convex dev --once --typecheck=disable', outputLabels.convexDeploy);
           const time = performance.now() - t0;
           logger.info('deploy action finished in', time);
 
           // Start the default preview if it's not already running
           if (!workbenchStore.isDefaultPreviewRunning()) {
-            await this.#shellTerminal.startCommand('vite --open');
+            await this.#shellTerminal.startCommand('npm run dev');
             result += '\n\nDev server started successfully!';
           }
 

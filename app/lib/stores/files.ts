@@ -1,23 +1,23 @@
-import type { WebContainer, PathWatcherEvent } from '@webcontainer/api';
+import type { CodeInterpreter } from '@e2b/code-interpreter';
 import { getEncoding } from 'istextorbinary';
 import { map, type MapStore } from 'nanostores';
 import { Buffer } from 'node:buffer';
-import { path } from 'chef-agent/utils/path';
-import { bufferWatchEvents } from '~/utils/buffer';
-import { WORK_DIR } from 'chef-agent/constants.js';
+import { path } from 'zapdev-agent/utils/path';
+import { WORK_DIR } from 'zapdev-agent/constants.js';
 import { computeFileModifications } from '~/utils/diff';
-import { createScopedLogger } from 'chef-agent/utils/logger';
-import { unreachable } from 'chef-agent/utils/unreachable';
+import { createScopedLogger } from 'zapdev-agent/utils/logger';
+import { unreachable } from 'zapdev-agent/utils/unreachable';
 import { incrementFileUpdateCounter } from './fileUpdateCounter';
-import { getAbsolutePath, type AbsolutePath } from 'chef-agent/utils/workDir';
-import type { File, FileMap } from 'chef-agent/types';
+import { getAbsolutePath, type AbsolutePath } from 'zapdev-agent/utils/workDir';
+import type { File, FileMap } from 'zapdev-agent/types';
+import { writeFile, readFile, listFiles } from '~/lib/e2b';
 
 const logger = createScopedLogger('FilesStore');
 
 const utf8TextDecoder = new TextDecoder('utf8', { fatal: true });
 
 export class FilesStore {
-  #webcontainer: Promise<WebContainer>;
+  #codeInterpreter: Promise<CodeInterpreter>;
 
   /**
    * Tracks the number of files without folders.
@@ -32,17 +32,21 @@ export class FilesStore {
   #modifiedFiles: Map<AbsolutePath, string> = import.meta.hot?.data.modifiedFiles ?? new Map();
 
   /**
-   * Map of files that matches the state of WebContainer.
+   * Map of files that matches the state of E2B Code Interpreter.
    */
   files: MapStore<FileMap> = import.meta.hot?.data.files ?? map({});
   userWrites: Map<AbsolutePath, number> = import.meta.hot?.data.userWrites ?? new Map();
+
+  // File watching interval
+  #watchInterval: number | null = null;
+  #watchedFiles: Set<string> = new Set();
 
   get filesCount() {
     return this.#size;
   }
 
-  constructor(webcontainerPromise: Promise<WebContainer>) {
-    this.#webcontainer = webcontainerPromise;
+  constructor(codeInterpreterPromise: Promise<CodeInterpreter>) {
+    this.#codeInterpreter = codeInterpreterPromise;
 
     if (import.meta.hot) {
       import.meta.hot.data.files = this.files;
@@ -66,6 +70,7 @@ export class FilesStore {
   getFileModifications() {
     return computeFileModifications(this.files.get(), this.#modifiedFiles);
   }
+  
   getModifiedFiles() {
     let modifiedFiles: { [path: string]: File } | undefined = undefined;
 
@@ -95,10 +100,8 @@ export class FilesStore {
   }
 
   async saveFile(filePath: AbsolutePath, content: string) {
-    const webcontainer = await this.#webcontainer;
-
     try {
-      const relativePath = path.relative(webcontainer.workdir, filePath);
+      const relativePath = path.relative(WORK_DIR, filePath);
 
       if (!relativePath) {
         throw new Error(`EINVAL: invalid file path, write '${relativePath}'`);
@@ -110,13 +113,13 @@ export class FilesStore {
         unreachable('Expected content to be defined');
       }
 
-      await webcontainer.fs.writeFile(relativePath, content);
+      await writeFile(relativePath, content);
 
       if (!this.#modifiedFiles.has(filePath)) {
         this.#modifiedFiles.set(filePath, oldContent);
       }
 
-      // we immediately update the file and don't rely on the `change` event coming from the watcher
+      // we immediately update the file and don't rely on the file watching
       this.files.setKey(filePath, { type: 'file', content, isBinary: false });
       this.userWrites.set(filePath, Date.now());
 
@@ -129,106 +132,139 @@ export class FilesStore {
   }
 
   async #init() {
-    const webcontainer = await this.#webcontainer;
-    (globalThis as any).webcontainer = webcontainer;
-    webcontainer.internal.watchPaths(
-      { include: [`${WORK_DIR}/**`], exclude: ['**/node_modules', '.git'], includeContent: true },
-      bufferWatchEvents(FILE_EVENTS_DEBOUNCE_MS, this.#processEventBuffer.bind(this)),
-    );
+    const codeInterpreter = await this.#codeInterpreter;
+    (globalThis as any).codeInterpreter = codeInterpreter;
+    
+    // Start file watching using polling since E2B doesn't have native file watching
+    this.#startFileWatching();
   }
 
-  async prewarmWorkdir(container: WebContainer) {
-    const absFilePaths = await container.internal.fileSearch([] as any, WORK_DIR, {
-      excludes: ['.gitignore', 'node_modules'],
-    });
-    const dirs = new Set<string>();
-    for (const absPath of absFilePaths) {
-      const dir = path.dirname(absPath);
-      const relativePath = path.relative(container.workdir, absPath);
-      if (!relativePath) {
-        continue;
-      }
-      dirs.add(dir);
-    }
-    for (const dir of Array.from(dirs).sort()) {
-      const sanitizedPath = dir.replace(/\/+$/g, '');
-      this.files.setKey(getAbsolutePath(sanitizedPath), { type: 'folder' });
-    }
-
-    const loadFile = async (absPath: string) => {
-      const relativePath = path.relative(container.workdir, absPath);
-      if (!relativePath) {
-        return;
-      }
-      const buffer = await container.fs.readFile(relativePath);
-      const isBinary = isBinaryFile(buffer);
-      let content = '';
-      if (!isBinary) {
-        content = this.#decodeFileContent(buffer);
-      }
-      this.files.setKey(getAbsolutePath(absPath), { type: 'file', content, isBinary });
-    };
-    await Promise.all(absFilePaths.map(loadFile));
-  }
-
-  #processEventBuffer(events: Array<[events: PathWatcherEvent[]]>) {
-    const watchEvents = events.flat(2);
-
-    for (const { type, path, buffer } of watchEvents) {
-      // remove any trailing slashes
-      const sanitizedPath = path.replace(/\/+$/g, '');
-      incrementFileUpdateCounter(sanitizedPath);
-
-      switch (type) {
-        case 'add_dir': {
-          // we intentionally add a trailing slash so we can distinguish files from folders in the file tree
-          this.files.setKey(getAbsolutePath(sanitizedPath), { type: 'folder' });
-          break;
+  async prewarmWorkdir(container: CodeInterpreter) {
+    try {
+      const files = await listFiles(WORK_DIR);
+      
+      // Process directories first
+      const dirs = new Set<string>();
+      for (const file of files) {
+        if (file.type === 'directory') {
+          const fullPath = path.join(WORK_DIR, file.name);
+          dirs.add(fullPath);
+          this.files.setKey(getAbsolutePath(fullPath), { type: 'folder' });
         }
-        case 'remove_dir': {
-          this.files.setKey(getAbsolutePath(sanitizedPath), undefined);
+      }
 
-          for (const [direntPath] of Object.entries(this.files)) {
-            if (direntPath.startsWith(sanitizedPath)) {
-              this.files.setKey(getAbsolutePath(direntPath), undefined);
+      // Then process files
+      for (const file of files) {
+        if (file.type === 'file') {
+          const fullPath = path.join(WORK_DIR, file.name);
+          try {
+            const content = await readFile(fullPath);
+            const buffer = new TextEncoder().encode(content);
+            const isBinary = isBinaryFile(buffer);
+            
+            this.files.setKey(getAbsolutePath(fullPath), { 
+              type: 'file', 
+              content: isBinary ? '' : content, 
+              isBinary 
+            });
+            
+            this.#watchedFiles.add(fullPath);
+            this.#size++;
+          } catch (error) {
+            logger.error(`Failed to read file ${fullPath}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      logger.error('Failed to prewarm workdir:', error);
+    }
+  }
+
+  #startFileWatching() {
+    // Poll for file changes every 2 seconds
+    this.#watchInterval = window.setInterval(async () => {
+      try {
+        await this.#checkForFileChanges();
+      } catch (error) {
+        logger.error('Error checking for file changes:', error);
+      }
+    }, 2000);
+  }
+
+  async #checkForFileChanges() {
+    try {
+      const files = await listFiles(WORK_DIR);
+      const currentFiles = new Set<string>();
+      
+      // Check for new/modified files
+      for (const file of files) {
+        const fullPath = path.join(WORK_DIR, file.name);
+        currentFiles.add(fullPath);
+        
+        if (file.type === 'file') {
+          const existingFile = this.files.get()[getAbsolutePath(fullPath)];
+          
+          if (!existingFile) {
+            // New file
+            try {
+              const content = await readFile(fullPath);
+              const buffer = new TextEncoder().encode(content);
+              const isBinary = isBinaryFile(buffer);
+              
+              this.files.setKey(getAbsolutePath(fullPath), { 
+                type: 'file', 
+                content: isBinary ? '' : content, 
+                isBinary 
+              });
+              
+              this.#size++;
+              incrementFileUpdateCounter(fullPath);
+            } catch (error) {
+              logger.error(`Failed to read new file ${fullPath}:`, error);
+            }
+          } else if (existingFile.type === 'file' && !existingFile.isBinary) {
+            // Check if file content changed
+            try {
+              const content = await readFile(fullPath);
+              if (content !== existingFile.content) {
+                this.files.setKey(getAbsolutePath(fullPath), { 
+                  ...existingFile,
+                  content 
+                });
+                incrementFileUpdateCounter(fullPath);
+              }
+            } catch (error) {
+              // File might have been deleted or become inaccessible
+              logger.debug(`Could not read file ${fullPath}, might be deleted`);
             }
           }
-          break;
-        }
-        case 'add_file':
-        case 'change': {
-          if (type === 'add_file') {
-            this.#size++;
+        } else if (file.type === 'directory') {
+          const existingDir = this.files.get()[getAbsolutePath(fullPath)];
+          if (!existingDir) {
+            this.files.setKey(getAbsolutePath(fullPath), { type: 'folder' });
+            incrementFileUpdateCounter(fullPath);
           }
-
-          let content = '';
-
-          /**
-           * @note This check is purely for the editor. The way we detect this is not
-           * bullet-proof and it's a best guess so there might be false-positives.
-           * The reason we do this is because we don't want to display binary files
-           * in the editor nor allow to edit them.
-           */
-          const isBinary = isBinaryFile(buffer);
-
-          if (!isBinary) {
-            content = this.#decodeFileContent(buffer);
+        }
+        
+        this.#watchedFiles.add(fullPath);
+      }
+      
+      // Check for deleted files
+      for (const watchedFile of this.#watchedFiles) {
+        if (!currentFiles.has(watchedFile)) {
+          const existingFile = this.files.get()[getAbsolutePath(watchedFile)];
+          if (existingFile) {
+            this.files.setKey(getAbsolutePath(watchedFile), undefined);
+            if (existingFile.type === 'file') {
+              this.#size--;
+            }
+            incrementFileUpdateCounter(watchedFile);
           }
-
-          this.files.setKey(getAbsolutePath(sanitizedPath), { type: 'file', content, isBinary });
-
-          break;
-        }
-        case 'remove_file': {
-          this.#size--;
-          this.files.setKey(getAbsolutePath(sanitizedPath), undefined);
-          break;
-        }
-        case 'update_directory': {
-          // we don't care about these events
-          break;
+          this.#watchedFiles.delete(watchedFile);
         }
       }
+    } catch (error) {
+      logger.error('Error in file watching:', error);
     }
   }
 
@@ -242,6 +278,13 @@ export class FilesStore {
     } catch (error) {
       console.log(error);
       return '';
+    }
+  }
+
+  destroy() {
+    if (this.#watchInterval) {
+      clearInterval(this.#watchInterval);
+      this.#watchInterval = null;
     }
   }
 }

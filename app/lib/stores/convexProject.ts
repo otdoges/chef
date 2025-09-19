@@ -1,5 +1,5 @@
 import { atom } from 'nanostores';
-import type { ConvexProject } from 'chef-agent/types';
+import type { ConvexProject } from 'zapdev-agent/types';
 
 export const convexProjectStore = atom<ConvexProject | null>(null);
 

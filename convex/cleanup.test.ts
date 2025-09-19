@@ -59,7 +59,7 @@ describe("cleanup", () => {
           promptTokens: 0,
           cachedPromptTokens: 0,
         },
-        chefTokens: 0,
+        zapdevTokens: 0,
       });
     });
 
@@ -659,7 +659,7 @@ describe("file cleanup tests", () => {
           promptTokens: 0,
           cachedPromptTokens: 0,
         },
-        chefTokens: 0,
+        zapdevTokens: 0,
       });
     });
 

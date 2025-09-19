@@ -798,7 +798,7 @@ async function respondToMessage(message) {
   if (message.source !== window.parent) {
     return;
   }
-  if (message.data.type !== "chefPreviewRequest") {
+  if (message.data.type !== "zapdevPreviewRequest") {
     return;
   }
   if (message.data.request === "ping") {
