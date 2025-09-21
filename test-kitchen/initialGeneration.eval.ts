@@ -7,25 +7,25 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
 import { google } from '@ai-sdk/google';
 import { xai } from '@ai-sdk/xai';
-import { chefTask } from './chefTask.js';
-import { chefScorer } from './chefScorer.js';
-import type { ChefModel } from './types.js';
+import { zapdevTask } from './chefTask.js';
+import { zapdevScorer } from './chefScorer.js';
+import type { ZapDevModel } from './types.js';
 import * as net from 'net';
 
-const CHEF_PROJECT = 'chef';
+const ZAPDEV_PROJECT = 'zapdev';
 
-function chefEval(model: ChefModel) {
-  const experimentName = `${CHEF_PROJECT}-${model.name}`;
+function zapdevEval(model: ZapDevModel) {
+  const experimentName = `${ZAPDEV_PROJECT}-${model.name}`;
   let outputDir = process.env.OUTPUT_TEMPDIR;
   if (!outputDir) {
-    outputDir = mkdtempSync(path.join(os.tmpdir(), 'chef-eval'));
+    outputDir = mkdtempSync(path.join(os.tmpdir(), 'zapdev-eval'));
   }
   const environment = process.env.ENVIRONMENT ?? 'dev';
-  return braintrust.Eval(CHEF_PROJECT, {
+  return braintrust.Eval(ZAPDEV_PROJECT, {
     experimentName,
     data: SUGGESTIONS.map((s) => ({ input: s.prompt })),
-    task: (input) => chefTask(model, outputDir, input),
-    scores: [chefScorer],
+    task: (input) => zapdevTask(model, outputDir, input),
+    scores: [zapdevScorer],
     maxConcurrency: 2,
     metadata: {
       model: model.name,
@@ -43,7 +43,7 @@ function chefEval(model: ChefModel) {
 net.setDefaultAutoSelectFamily(true);
 
 if (process.env.ANTHROPIC_API_KEY) {
-  chefEval({
+  zapdevEval({
     name: 'claude-4-sonnet',
     model_slug: 'claude-sonnet-4-20250514',
     ai: anthropic('claude-sonnet-4-20250514'),
@@ -54,13 +54,13 @@ if (process.env.ANTHROPIC_API_KEY) {
 // Braintrust sets the OPENAI_API_KEY environment variable even if we don't set it, so we need
 // to manually check the USE_OPENAI environment variable to determine if we should use OpenAI.
 if (process.env.OPENAI_API_KEY && process.env.USE_OPENAI === 'true') {
-  chefEval({
+  zapdevEval({
     name: 'gpt-4.1',
     model_slug: 'gpt-4.1',
     ai: openai('gpt-4.1'),
     maxTokens: 8192,
   });
-  chefEval({
+  zapdevEval({
     name: 'gpt-5',
     model_slug: 'gpt-5',
     ai: openai('gpt-5'),
@@ -69,7 +69,7 @@ if (process.env.OPENAI_API_KEY && process.env.USE_OPENAI === 'true') {
 }
 
 if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-  chefEval({
+  zapdevEval({
     name: 'gemini-2.5-pro',
     model_slug: 'gemini-2.5-pro',
     ai: google('gemini-2.5-pro'),
@@ -78,7 +78,7 @@ if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
 }
 
 if (process.env.XAI_API_KEY) {
-  chefEval({
+  zapdevEval({
     name: 'grok-3-mini',
     model_slug: 'grok-3-mini',
     ai: xai('grok-3-mini'),

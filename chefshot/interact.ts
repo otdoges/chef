@@ -7,7 +7,7 @@ import * as lz4 from 'lz4-wasm-nodejs';
 
 interface GenerateAppOptions {
   prompt: string;
-  chefUrl: string;
+  zapdevUrl: string;
   outputDir?: string;
   headless?: boolean;
   credentials: {
@@ -16,7 +16,7 @@ interface GenerateAppOptions {
   };
 }
 
-async function isChefRunning(url: string): Promise<boolean> {
+async function isZapDevRunning(url: string): Promise<boolean> {
   try {
     const response = await fetch(url);
     return response.ok;
@@ -25,9 +25,9 @@ async function isChefRunning(url: string): Promise<boolean> {
   }
 }
 
-async function handleSignIn(page: Page, chefUrl: string, credentials: { email: string; password: string }) {
+async function handleSignIn(page: Page, zapdevUrl: string, credentials: { email: string; password: string }) {
   const signInPage = await page.context().newPage();
-  await signInPage.goto(`${chefUrl}/signin?use-email=1`, {
+  await signInPage.goto(`${zapdevUrl}/signin?use-email=1`, {
     timeout: 60000,
   });
   await signInPage.click('button:has-text("Continue with GitHub")');
@@ -38,14 +38,14 @@ async function handleSignIn(page: Page, chefUrl: string, credentials: { email: s
   await signInPage.close();
 }
 
-export async function generateApp({ prompt, chefUrl, outputDir, headless = true, credentials }: GenerateAppOptions) {
+export async function generateApp({ prompt, zapdevUrl, outputDir, headless = true, credentials }: GenerateAppOptions) {
   if (!credentials.email || !credentials.password) {
     throw new Error('Email and password are required');
   }
 
-  if (!(await isChefRunning(chefUrl))) {
+  if (!(await isZapDevRunning(zapdevUrl))) {
     throw new Error(
-      `No Chef server found at ${chefUrl}. Please start the appropriate server first:\n` +
+      `No ZapDev server found at ${zapdevUrl}. Please start the appropriate server first:\n` +
         `  - For --dev: Run 'pnpm run dev' (http://127.0.0.1:5173)\n` +
         `  - For --local-build: Run 'pnpm run build && pnpm run start' (http://localhost:3000)\n` +
         `  - For --prod: are you connected to the internet?`,
@@ -62,8 +62,8 @@ export async function generateApp({ prompt, chefUrl, outputDir, headless = true,
     const page = await context.newPage();
 
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(chefUrl);
-    await handleSignIn(page, chefUrl, credentials);
+    await page.goto(zapdevUrl);
+    await handleSignIn(page, zapdevUrl, credentials);
     console.error('Successfully signed in, ready for interaction');
 
     const inputSelector = 'textarea';

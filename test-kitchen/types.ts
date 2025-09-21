@@ -1,13 +1,13 @@
 import { LanguageModelUsage, LanguageModelV1 } from 'ai';
 
-export type ChefModel = {
+export type ZapDevModel = {
   name: string;
   model_slug: string;
   ai: LanguageModelV1;
   maxTokens: number;
 };
 
-export type ChefResult = {
+export type ZapDevResult = {
   success: boolean;
   numDeploys: number;
   usage: LanguageModelUsage;

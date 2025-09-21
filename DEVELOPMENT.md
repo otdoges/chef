@@ -1,6 +1,6 @@
 # Development
 
-Below is a guide for the development and release processes of Chef. This is meant for Convex employees and is not a supported workflow for external users.
+Below is a guide for the development and release processes of ZapDev. This is meant for Convex employees and is not a supported workflow for external users.
 
 There are three special branches:
 
@@ -93,7 +93,7 @@ can use the Vercel instant rollbacks to prompt old deployments to production.
 ### Auth
 
 - Users sign in with their regular Convex account through WorkOS.
-- Users choose a team to create a new project in for app they conconct with Chef.
+- Users choose a team to create a new project in for app they conconct with ZapDev.
   Note that this is _not_ the OAuth flow that we offer to customers; if a customer wants this,
   they need to use the OAuth flow that grants them access to a user's specific Convex project.
 - You'll need the following env vars set in `.env.local` (values are in 1Password under `flex .env.local`)
@@ -107,9 +107,9 @@ can use the Vercel instant rollbacks to prompt old deployments to production.
 
 You will need a lot of terminals
 
-- just run-big-brain-for-chef-dev
+- just run-big-brain-for-zapdev-dev
 - just run-dash
-- Switch chef .env.local env vars to the dev variants (from 1Password)
+- Switch zapdev .env.local env vars to the dev variants (from 1Password)
 - Set VITE_CONVEX_URL to 'placeholder' and remove CONVEX_URL
 - just convex-bb dev
 - Set VITE_CONVEX_SITE_URL to match the newly updated VITE_CONVEX_URL (but .convex.site instead)
@@ -127,9 +127,9 @@ We include source maps in production so you should be able to poke around in pro
 
 There are a few global variables available for debugging too:
 
-- `chefWebContainer` is the unix-ish container in which tooling and code runs
-- `chefMessages` is the raw messages
-- `chefParsedMessages` is similar
-- `chefSentryEnabled` is whether Sentry is currently enabled
-- `chefSetLogLevel()` can be called with log levels like `"debug"` or `"info"` to get more console logging. `"tracing"` is usually too much.
-- `chefAssertAdmin()` enables admin features (after checking that you are a member of the Convex team in the prod dashboard)
+- `zapdevWebContainer` is the unix-ish container in which tooling and code runs
+- `zapdevMessages` is the raw messages
+- `zapdevParsedMessages` is similar
+- `zapdevSentryEnabled` is whether Sentry is currently enabled
+- `zapdevSetLogLevel()` can be called with log levels like `"debug"` or `"info"` to get more console logging. `"tracing"` is usually too much.
+- `zapdevAssertAdmin()` enables admin features (after checking that you are a member of the Convex team in the prod dashboard)

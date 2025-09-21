@@ -250,7 +250,14 @@ async function onFinishHandler({
   _firstResponseTime: number | null;
   providerModel: string;
 }) {
-  const { providerMetadata } = result;
+  let providerMetadata = result.providerMetadata;
+  if (modelProvider === 'OpenRouter' && providerMetadata?.openai) {
+    providerMetadata = {
+      ...providerMetadata,
+      openrouter: providerMetadata.openai,
+    };
+    delete (providerMetadata as any).openai;
+  }
   // This usage accumulates accross multiple /api/chat calls until finishReason of 'stop'.
   const usage = {
     completionTokens: normalizeUsage(result.usage.completionTokens),
@@ -339,7 +346,7 @@ async function onFinishHandler({
   if (toolCallId) {
     const annotation = encodeUsageAnnotation(toolCallId, usage, providerMetadata);
     dataStream.writeMessageAnnotation({ type: 'usage', usage: annotation });
-    const modelAnnotation = encodeModelAnnotation(toolCallId, providerMetadata, modelChoice);
+    const modelAnnotation = encodeModelAnnotation(toolCallId, providerMetadata, modelChoice, modelProvider);
     dataStream.writeMessageAnnotation({ type: 'model', ...modelAnnotation });
   }
 

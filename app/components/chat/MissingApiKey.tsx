@@ -37,6 +37,7 @@ export function MissingApiKey({ provider, requireKey, resetDisableChatMessage }:
         preference: apiKey?.preference || ('quotaExhausted' as 'always' | 'quotaExhausted'),
         value: apiKey?.value || undefined,
         openai: apiKey?.openai || undefined,
+        openrouter: apiKey?.openrouter || undefined,
         xai: apiKey?.xai || undefined,
         google: apiKey?.google || undefined,
       };
@@ -50,6 +51,9 @@ export function MissingApiKey({ provider, requireKey, resetDisableChatMessage }:
           break;
         case 'openai':
           apiKeyMutation.openai = newKeyValue.trim();
+          break;
+        case 'openrouter':
+          apiKeyMutation.openrouter = newKeyValue.trim();
           break;
         case 'xai':
           apiKeyMutation.xai = newKeyValue.trim();
@@ -98,6 +102,7 @@ export function MissingApiKey({ provider, requireKey, resetDisableChatMessage }:
           preference: 'quotaExhausted',
           value: apiKey?.value,
           openai: apiKey?.openai,
+          openrouter: apiKey?.openrouter,
           xai: apiKey?.xai,
           google: apiKey?.google,
         },

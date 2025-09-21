@@ -46,6 +46,7 @@ export function encodeModelAnnotation(
   call: { kind: 'tool-call'; toolCallId: string | null } | { kind: 'final' },
   providerMetadata: ProviderMetadata | undefined,
   modelChoice: string | undefined,
+  fallbackProvider?: ModelProvider,
 ) {
   let provider: ProviderType | null = null;
   let model: string | null = null;
@@ -55,6 +56,9 @@ export function encodeModelAnnotation(
   } else if (providerMetadata?.openai) {
     provider = 'OpenAI';
     model = modelForProvider('OpenAI', modelChoice);
+  } else if (providerMetadata?.openrouter) {
+    provider = 'OpenRouter';
+    model = modelForProvider('OpenRouter', modelChoice);
   } else if (providerMetadata?.xai) {
     provider = 'XAI';
     model = modelForProvider('XAI', modelChoice);
@@ -64,6 +68,10 @@ export function encodeModelAnnotation(
   } else if (providerMetadata?.bedrock) {
     provider = 'Bedrock';
     model = modelForProvider('Bedrock', modelChoice);
+  }
+  if (!provider && fallbackProvider) {
+    provider = fallbackProvider;
+    model = modelForProvider(fallbackProvider, modelChoice);
   }
   return { toolCallId: call.kind === 'tool-call' ? call.toolCallId : 'final', provider, model };
 }

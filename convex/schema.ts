@@ -8,6 +8,7 @@ export const apiKeyValidator = v.object({
   // NB: This is the *Anthropic* API key.
   value: v.optional(v.string()),
   openai: v.optional(v.string()),
+  openrouter: v.optional(v.string()),
   xai: v.optional(v.string()),
   google: v.optional(v.string()),
 });

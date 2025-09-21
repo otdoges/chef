@@ -62,7 +62,14 @@ export async function chatAction({ request }: ActionFunctionArgs) {
     modelProvider: ModelProvider;
     modelChoice: string | undefined;
     userApiKey:
-      | { preference: 'always' | 'quotaExhausted'; value?: string; openai?: string; xai?: string; google?: string }
+      | {
+          preference: 'always' | 'quotaExhausted';
+          value?: string;
+          openai?: string;
+          openrouter?: string;
+          xai?: string;
+          google?: string;
+        }
       | undefined;
     shouldDisableTools: boolean;
     recordRawPromptsForDebugging?: boolean;
@@ -129,6 +136,8 @@ export async function chatAction({ request }: ActionFunctionArgs) {
       body.modelProvider = 'Anthropic';
     } else if (body.modelProvider === 'OpenAI') {
       userApiKey = body.userApiKey?.openai;
+    } else if (body.modelProvider === 'OpenRouter') {
+      userApiKey = body.userApiKey?.openrouter;
     } else if (body.modelProvider === 'XAI') {
       userApiKey = body.userApiKey?.xai;
     } else {
@@ -217,7 +226,14 @@ export async function chatAction({ request }: ActionFunctionArgs) {
 // Returns whether or not the user has an API key set for a given provider
 function hasApiKeySetForProvider(
   userApiKey:
-    | { preference: 'always' | 'quotaExhausted'; value?: string; openai?: string; xai?: string; google?: string }
+    | {
+        preference: 'always' | 'quotaExhausted';
+        value?: string;
+        openai?: string;
+        openrouter?: string;
+        xai?: string;
+        google?: string;
+      }
     | undefined,
   provider: ModelProvider,
 ) {
@@ -226,6 +242,8 @@ function hasApiKeySetForProvider(
       return userApiKey?.value !== undefined;
     case 'OpenAI':
       return userApiKey?.openai !== undefined;
+    case 'OpenRouter':
+      return userApiKey?.openrouter !== undefined;
     case 'XAI':
       return userApiKey?.xai !== undefined;
     case 'Google':

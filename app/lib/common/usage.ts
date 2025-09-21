@@ -15,6 +15,7 @@ export function usageFromGeneration(generation: {
     anthropicCacheCreationInputTokens: Number(generation.providerMetadata?.anthropic?.cacheCreationInputTokens ?? 0),
     anthropicCacheReadInputTokens: Number(generation.providerMetadata?.anthropic?.cacheReadInputTokens ?? 0),
     openaiCachedPromptTokens: Number(generation.providerMetadata?.openai?.cachedPromptTokens ?? 0),
+    openrouterCachedPromptTokens: Number(generation.providerMetadata?.openrouter?.cachedPromptTokens ?? 0),
     xaiCachedPromptTokens: Number(generation.providerMetadata?.xai?.cachedPromptTokens ?? 0),
     googleCachedContentTokenCount: Number(generation.providerMetadata?.google?.cachedContentTokenCount ?? 0),
     googleThoughtsTokenCount: Number(generation.providerMetadata?.google?.thoughtsTokenCount ?? 0),
@@ -31,6 +32,7 @@ export function initializeUsage(): Usage {
     anthropicCacheCreationInputTokens: 0,
     anthropicCacheReadInputTokens: 0,
     openaiCachedPromptTokens: 0,
+    openrouterCachedPromptTokens: 0,
     xaiCachedPromptTokens: 0,
     googleCachedContentTokenCount: 0,
     googleThoughtsTokenCount: 0,
@@ -94,6 +96,7 @@ function addUsage(totalUsage: Usage, payload: UsageAnnotation) {
   totalUsage.anthropicCacheCreationInputTokens += payload.providerMetadata?.anthropic?.cacheCreationInputTokens ?? 0;
   totalUsage.anthropicCacheReadInputTokens += payload.providerMetadata?.anthropic?.cacheReadInputTokens ?? 0;
   totalUsage.openaiCachedPromptTokens += payload.providerMetadata?.openai?.cachedPromptTokens ?? 0;
+  totalUsage.openrouterCachedPromptTokens += payload.providerMetadata?.openrouter?.cachedPromptTokens ?? 0;
   totalUsage.xaiCachedPromptTokens += payload.providerMetadata?.xai?.cachedPromptTokens ?? 0;
   totalUsage.googleCachedContentTokenCount += payload.providerMetadata?.google?.cachedContentTokenCount ?? 0;
   totalUsage.bedrockCacheWriteInputTokens += payload.providerMetadata?.bedrock?.usage?.cacheWriteInputTokens ?? 0;
@@ -104,6 +107,7 @@ export type ChefTokenBreakdown = {
   completionTokens: {
     anthropic: number;
     openai: number;
+    openrouter: number;
     xai: number;
     google: number;
     bedrock: number;
@@ -111,6 +115,7 @@ export type ChefTokenBreakdown = {
   promptTokens: {
     anthropic: { uncached: number; cached: number };
     openai: { uncached: number; cached: number };
+    openrouter: { uncached: number; cached: number };
     xai: { uncached: number; cached: number };
     google: { uncached: number; cached: number };
     bedrock: { uncached: number; cached: number };
@@ -126,6 +131,7 @@ export function calculateChefTokens(totalUsage: Usage, provider?: ProviderType) 
     completionTokens: {
       anthropic: 0,
       openai: 0,
+      openrouter: 0,
       xai: 0,
       google: 0,
       bedrock: 0,
@@ -136,6 +142,10 @@ export function calculateChefTokens(totalUsage: Usage, provider?: ProviderType) 
         cached: 0,
       },
       openai: {
+        uncached: 0,
+        cached: 0,
+      },
+      openrouter: {
         uncached: 0,
         cached: 0,
       },
@@ -199,6 +209,16 @@ export function calculateChefTokens(totalUsage: Usage, provider?: ProviderType) 
     breakdown.promptTokens.xai.uncached = xaiPromptTokens;
     // TODO - never seen xai set this field to anything but 0, so holding off until we understand.
     //chefTokens += totalUsage.xaiCachedPromptTokens * 3;
+  } else if (provider === 'OpenRouter') {
+    const openrouterCompletionTokens = totalUsage.completionTokens * 200;
+    chefTokens += openrouterCompletionTokens;
+    breakdown.completionTokens.openrouter = openrouterCompletionTokens;
+    const openrouterPromptTokens = totalUsage.promptTokens * 40;
+    chefTokens += openrouterPromptTokens;
+    breakdown.promptTokens.openrouter.uncached = openrouterPromptTokens;
+    const openrouterCachedPromptTokens = totalUsage.openrouterCachedPromptTokens * 40;
+    chefTokens += openrouterCachedPromptTokens;
+    breakdown.promptTokens.openrouter.cached = openrouterCachedPromptTokens;
   } else if (provider === 'Google') {
     const googleCompletionTokens = totalUsage.completionTokens * 140;
     chefTokens += googleCompletionTokens;

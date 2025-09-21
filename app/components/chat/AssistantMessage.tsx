@@ -157,6 +157,9 @@ function displayBreakdownForSingleAnnotation(breakdown: ChefTokenBreakdown) {
   if (breakdown.completionTokens.openai > 0) {
     return `${displayChefTokenNumber(breakdown.promptTokens.openai.uncached)} uncached, ${displayChefTokenNumber(breakdown.promptTokens.openai.cached)} cached, ${displayChefTokenNumber(breakdown.completionTokens.openai)} completion`;
   }
+  if (breakdown.completionTokens.openrouter > 0) {
+    return `${displayChefTokenNumber(breakdown.promptTokens.openrouter.uncached)} uncached, ${displayChefTokenNumber(breakdown.promptTokens.openrouter.cached)} cached, ${displayChefTokenNumber(breakdown.completionTokens.openrouter)} completion`;
+  }
   if (breakdown.completionTokens.xai > 0) {
     return `${displayChefTokenNumber(breakdown.promptTokens.xai.uncached)} uncached, ${displayChefTokenNumber(breakdown.promptTokens.xai.cached)} cached, ${displayChefTokenNumber(breakdown.completionTokens.xai)} completion`;
   }
@@ -181,6 +184,8 @@ function displayModel(modelInfo: { provider: ProviderType; model: string | undef
       return <div className="text-xs text-content-secondary">Generated with Anthropic</div>;
     case 'OpenAI':
       return <div className="text-xs text-content-secondary">Generated with OpenAI</div>;
+    case 'OpenRouter':
+      return <div className="text-xs text-content-secondary">Generated with OpenRouter</div>;
     case 'XAI':
       return <div className="text-xs text-content-secondary">Generated with xAI</div>;
     case 'Google':

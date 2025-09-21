@@ -32,6 +32,7 @@ export type ModelSelection =
   | 'gpt-4.1-mini'
   | 'gpt-5'
   | 'grok-3-mini'
+  | 'openrouter-grok-4-fast'
   | 'gemini-2.5-pro';
 
 export const MAX_CONSECUTIVE_DEPLOY_ERRORS = 5;

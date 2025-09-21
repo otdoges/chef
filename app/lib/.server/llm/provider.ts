@@ -49,6 +49,8 @@ export function modelForProvider(provider: ModelProvider, modelChoice: string | 
       return getEnv('AMAZON_BEDROCK_MODEL') || 'us.anthropic.claude-3-5-sonnet-20241022-v2:0';
     case 'OpenAI':
       return getEnv('OPENAI_MODEL') || 'gpt-4.1';
+    case 'OpenRouter':
+      return getEnv('OPENROUTER_MODEL') || 'x-ai/grok-4-fast:free';
     case 'XAI':
       return getEnv('XAI_MODEL') || 'grok-3-mini';
     case 'Google':
@@ -132,6 +134,21 @@ export function getProvider(
         model: openai(model),
         maxTokens: 24576,
         options: modelChoice === 'gpt-5' ? { openai: { reasoningEffort: 'medium' } } : undefined,
+      };
+      break;
+    }
+    case 'OpenRouter': {
+      model = modelForProvider(modelProvider, modelChoice);
+      const baseFetch = userApiKey ? userKeyApiFetch('OpenRouter') : fetch;
+      const openrouter = createOpenAI({
+        apiKey: userApiKey || getEnv('OPENROUTER_API_KEY'),
+        baseURL: 'https://openrouter.ai/api/v1',
+        fetch: withOpenRouterHeaders(baseFetch),
+        compatibility: 'strict',
+      });
+      provider = {
+        model: openrouter(model),
+        maxTokens: 8192,
       };
       break;
     }
@@ -267,5 +284,23 @@ const userKeyApiFetch = (provider: ModelProvider) => {
       );
     }
     return result;
+  };
+};
+
+const withOpenRouterHeaders = (baseFetch: typeof fetch) => {
+  const referer = getEnv('OPENROUTER_SITE_URL') ?? 'https://chef.convex.dev';
+  const title = getEnv('OPENROUTER_APP_NAME') ?? 'Chef';
+  return async (input: RequestInfo | URL, init?: RequestInit) => {
+    const headers = new Headers(init?.headers ?? {});
+    if (!headers.has('HTTP-Referer')) {
+      headers.set('HTTP-Referer', referer);
+    }
+    if (!headers.has('X-Title')) {
+      headers.set('X-Title', title);
+    }
+    return baseFetch(input, {
+      ...init,
+      headers,
+    });
   };
 };

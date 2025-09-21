@@ -10,7 +10,7 @@ import type { Doc } from '@convex/_generated/dataModel';
 import { captureMessage } from '@sentry/remix';
 import { useLaunchDarkly } from '~/lib/hooks/useLaunchDarkly';
 
-export type ModelProvider = 'openai' | 'google' | 'xai' | 'anthropic' | 'auto';
+export type ModelProvider = 'openai' | 'google' | 'xai' | 'openrouter' | 'anthropic' | 'auto';
 
 export function displayModelProviderName(provider: ModelProvider) {
   switch (provider) {
@@ -20,6 +20,8 @@ export function displayModelProviderName(provider: ModelProvider) {
       return 'Google';
     case 'xai':
       return 'xAI';
+    case 'openrouter':
+      return 'OpenRouter';
     case 'anthropic':
       return 'Anthropic';
     case 'auto':
@@ -56,6 +58,13 @@ const providerToIcon: Record<string, React.ReactNode> = {
         d="M325.226 695.251C206.128 580.84 226.662 403.776 328.285 301.668C403.431 226.097 526.549 195.254 634.026 240.596L749.454 186.994C728.657 171.88 702.007 155.623 671.424 144.2C533.19 86.9942 367.693 115.465 255.323 228.382C147.234 337.081 113.244 504.215 171.613 646.833C215.216 753.423 143.739 828.818 71.7385 904.916C46.2237 931.893 20.6216 958.87 0 987.429L325.139 695.339"
         fill="currentColor"
       />
+    </svg>
+  ),
+  openrouter: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+      <path d="M7.5 12a4.5 4.5 0 018.2-2.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M16.5 12a4.5 4.5 0 01-8.2 2.7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   ),
 };
@@ -98,6 +107,11 @@ export const models: Partial<
   'grok-3-mini': {
     name: 'Grok 3 Mini',
     provider: 'xai',
+  },
+  'openrouter-grok-4-fast': {
+    name: 'Grok 4 Fast (OpenRouter)',
+    provider: 'openrouter',
+    requireKey: true,
   },
   'claude-3-5-haiku': {
     name: 'Claude 3.5 Haiku',
@@ -203,6 +217,9 @@ const keyForProvider = (apiKeys: Doc<'convexMembers'>['apiKey'], provider: Model
     } else {
       return apiKeys?.value;
     }
+  }
+  if (provider === 'openrouter') {
+    return apiKeys?.openrouter;
   }
   return apiKeys?.[provider];
 };

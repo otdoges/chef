@@ -1,7 +1,7 @@
 import { CoreMessage, generateText, LanguageModelUsage } from 'ai';
 import * as walkdir from 'walkdir';
 import { path } from 'chef-agent/utils/path';
-import { ChefResult, ChefModel } from './types';
+import { ZapDevResult, ZapDevModel } from './types';
 import { copyFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { ChatContextManager } from 'chef-agent/ChatContextManager';
@@ -47,7 +47,7 @@ const IGNORED_FILENAMES = [
 
 const TEMPLATE_DIR = '../template';
 
-export async function chefTask(model: ChefModel, outputDir: string, userMessage: string): Promise<ChefResult> {
+export async function zapdevTask(model: ZapDevModel, outputDir: string, userMessage: string): Promise<ZapDevResult> {
   if (!path.isAbsolute(outputDir)) {
     throw new Error(`outputDir ${outputDir} must be an absolute path`);
   }
@@ -387,7 +387,7 @@ const installDependencies = wrapTraced(async function installDependencies(repoDi
   execFileSync('npm', ['install'], { cwd: repoDir });
 });
 
-async function invokeGenerateText(model: ChefModel, opts: SystemPromptOptions, context: UIMessage[]) {
+async function invokeGenerateText(model: ZapDevModel, opts: SystemPromptOptions, context: UIMessage[]) {
   return traced(
     async (span) => {
       const messages: CoreMessage[] = [

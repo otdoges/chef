@@ -30,7 +30,7 @@ const findAndLoadEnv = async () => {
 await findAndLoadEnv();
 
 interface GenerateOptions {
-  chefUrl?: string;
+  zapdevUrl?: string;
   prod?: boolean;
   dev?: boolean;
   localBuild?: boolean;
@@ -42,11 +42,11 @@ interface GenerateOptions {
 }
 
 const generateCommand = new Command('generate')
-  .description('Generate an app using Chef AI')
-  .argument('<prompt>', 'The prompt to send to Chef')
+  .description('Generate an app using ZapDev AI')
+  .argument('<prompt>', 'The prompt to send to ZapDev')
   // URL group - mutually exclusive options
   .addOption(
-    new Option('--chef-url <url>', 'Custom Chef URL')
+    new Option('--zapdev-url <url>', 'Custom ZapDev URL')
       .conflicts(['prod', 'dev', 'local-build'])
       .argParser((value: string) => {
         try {
@@ -58,14 +58,14 @@ const generateCommand = new Command('generate')
       }),
   )
   .addOption(
-    new Option('--prod', 'Use production Chef at chef.convex.dev').conflicts(['chef-url', 'dev', 'local-build']),
+    new Option('--prod', 'Use production ZapDev at chef.convex.dev').conflicts(['zapdev-url', 'dev', 'local-build']),
   )
   .addOption(
-    new Option('--dev', 'Use local dev server at http://127.0.0.1:5173').conflicts(['chef-url', 'prod', 'local-build']),
+    new Option('--dev', 'Use local dev server at http://127.0.0.1:5173').conflicts(['zapdev-url', 'prod', 'local-build']),
   )
   .addOption(
     new Option('--local-build', 'Build (if needed) and run local server at http://localhost:3000')
-      .conflicts(['chef-url', 'prod', 'dev'])
+      .conflicts(['zapdev-url', 'prod', 'dev'])
       .default(true),
   )
   // Output directory options
@@ -83,26 +83,26 @@ const generateCommand = new Command('generate')
     new Option('--headed', 'show browser window').hideHelp().conflicts(['no-headless']).preset({ headless: false }),
   )
   .action(async (prompt: string, options: GenerateOptions) => {
-    let chefUrl: string;
+    let zapdevUrl: string;
     if (options.dev) {
-      chefUrl = 'http://127.0.0.1:5173';
+      zapdevUrl = 'http://127.0.0.1:5173';
     } else if (options.prod) {
-      chefUrl = 'https://chef.convex.dev';
-    } else if (options.chefUrl) {
-      chefUrl = options.chefUrl;
+      zapdevUrl = 'https://chef.convex.dev';
+    } else if (options.zapdevUrl) {
+      zapdevUrl = options.zapdevUrl;
     } else {
       // Default to local-build behavior
-      chefUrl = 'http://localhost:3000';
+      zapdevUrl = 'http://localhost:3000';
     }
-    log(`Looking for Chef at ${chefUrl}`);
+    log(`Looking for ZapDev at ${zapdevUrl}`);
 
     // Check for required environment variables
-    const email = process.env.CHEF_EVAL_USER_EMAIL;
-    const password = process.env.CHEF_EVAL_USER_PASSWORD;
+    const email = process.env.ZAPDEV_EVAL_USER_EMAIL;
+    const password = process.env.ZAPDEV_EVAL_USER_PASSWORD;
 
     if (!email || !password) {
       log('Error: Missing required environment variables');
-      log('Please set CHEF_EVAL_USER_EMAIL and CHEF_EVAL_USER_PASSWORD in your .env.local file');
+      log('Please set ZAPDEV_EVAL_USER_EMAIL and ZAPDEV_EVAL_USER_PASSWORD in your .env.local file');
       process.exit(1);
     }
 
@@ -126,7 +126,7 @@ const generateCommand = new Command('generate')
 
     const { messages, outputDir: finalOutputDir } = await generateApp({
       prompt,
-      chefUrl,
+      zapdevUrl,
       outputDir,
       headless: options.headless,
       credentials: {
@@ -153,7 +153,7 @@ const generateCommand = new Command('generate')
   });
 
 interface DownloadOptions {
-  chefSiteUrl: string;
+  zapdevSiteUrl: string;
   dev?: boolean;
   prod?: boolean;
   messagesFile?: string;
@@ -162,11 +162,11 @@ interface DownloadOptions {
 }
 
 const downloadCommand = new Command('download')
-  .description('Download an app using Chef AI')
+  .description('Download an app using ZapDev AI')
   .argument('chatUuid', 'The UUID of the chat to download')
   // URL group - mutually exclusive options
   .addOption(
-    new Option('--chef-site-url <url>', 'Chef site URL').conflicts(['prod', 'dev']).argParser((value: string) => {
+    new Option('--zapdev-site-url <url>', 'ZapDev site URL').conflicts(['prod', 'dev']).argParser((value: string) => {
       try {
         new URL(value);
         return value;
@@ -175,44 +175,44 @@ const downloadCommand = new Command('download')
       }
     }),
   )
-  .addOption(new Option('--prod', 'Use production Chef database').conflicts(['chef-backend-url', 'dev']))
-  .addOption(new Option('--dev', 'Use dev Chef database configured in .env.local').conflicts(['chef-site-url', 'prod']))
+  .addOption(new Option('--prod', 'Use production ZapDev database').conflicts(['zapdev-backend-url', 'dev']))
+  .addOption(new Option('--dev', 'Use dev ZapDev database configured in .env.local').conflicts(['zapdev-site-url', 'prod']))
   .addOption(new Option('--messages-file <file>', 'File to write the parsed (JSON) messages to'))
   .addOption(new Option('--messages-raw-file <file>', 'File to write the compressed messages to'))
   .action(async (chatUuid: string, options: DownloadOptions) => {
-    let chefSiteUrl: string | undefined;
+    let zapdevSiteUrl: string | undefined;
     if (options.dev) {
       if (process.env.VITE_CONVEX_SITE_URL) {
-        chefSiteUrl = process.env.VITE_CONVEX_SITE_URL;
+        zapdevSiteUrl = process.env.VITE_CONVEX_SITE_URL;
       } else if (process.env.CONVEX_URL) {
         const convexUrl = process.env.CONVEX_URL;
         if (convexUrl.endsWith('.convex.cloud')) {
-          chefSiteUrl = convexUrl.replace('.convex.cloud', '.convex.site');
+          zapdevSiteUrl = convexUrl.replace('.convex.cloud', '.convex.site');
         }
       }
     } else if (options.prod) {
-      chefSiteUrl = 'https://academic-mammoth-217.convex.site';
-    } else if (options.chefSiteUrl) {
-      chefSiteUrl = options.chefSiteUrl;
+      zapdevSiteUrl = 'https://academic-mammoth-217.convex.site';
+    } else if (options.zapdevSiteUrl) {
+      zapdevSiteUrl = options.zapdevSiteUrl;
     }
-    if (!chefSiteUrl) {
+    if (!zapdevSiteUrl) {
       log('Error: Missing required environment variables');
-      log('Please set CONVEX_URL in your .env.local file or run with --chef-site-url or --prod');
+      log('Please set CONVEX_URL in your .env.local file or run with --zapdev-site-url or --prod');
       process.exit(1);
     }
-    log(`Looking for Chef at ${chefSiteUrl}`);
-    const chefAdminToken = process.env.CHEF_ADMIN_TOKEN;
-    if (!chefAdminToken) {
+    log(`Looking for ZapDev at ${zapdevSiteUrl}`);
+    const zapdevAdminToken = process.env.ZAPDEV_ADMIN_TOKEN;
+    if (!zapdevAdminToken) {
       log('Error: Missing required environment variables');
-      log('Please set CHEF_ADMIN_TOKEN in your .env.local file');
+      log('Please set ZAPDEV_ADMIN_TOKEN in your .env.local file');
       process.exit(1);
     }
 
-    const response = await fetch(`${chefSiteUrl}/__debug/download_messages`, {
+    const response = await fetch(`${zapdevSiteUrl}/__debug/download_messages`, {
       method: 'POST',
       body: JSON.stringify({ chatUuid }),
       headers: {
-        'X-Chef-Admin-Token': chefAdminToken,
+        'X-ZapDev-Admin-Token': zapdevAdminToken,
       },
     });
     if (!response.ok) {
@@ -241,6 +241,6 @@ const downloadCommand = new Command('download')
 
 const program = new Command();
 
-program.name('chefshot').description('Chef AI CLI').addCommand(generateCommand).addCommand(downloadCommand);
+program.name('chefshot').description('ZapDev AI CLI').addCommand(generateCommand).addCommand(downloadCommand);
 
 program.parse();

@@ -1,4 +1,4 @@
-import { setChefDebugProperty } from './chefDebug.js';
+import { setZapDevDebugProperty } from './chefDebug.js';
 
 const levelOrder = ['trace', 'debug', 'info', 'warn', 'error'] as const;
 type DebugLevel = (typeof levelOrder)[number];
@@ -33,7 +33,7 @@ export function createScopedLogger(scope: string): Logger {
   };
 }
 
-export function chefSetLogLevel(level: DebugLevel) {
+export function zapdevSetLogLevel(level: DebugLevel) {
   if (!levelOrder.includes(level)) {
     throw new Error('bad log level');
   }
@@ -43,7 +43,7 @@ export function chefSetLogLevel(level: DebugLevel) {
 
 if (typeof window !== 'undefined') {
   // Global debugging interface, allowed in production.
-  setChefDebugProperty('setLogLevel', chefSetLogLevel);
+  setZapDevDebugProperty('setLogLevel', zapdevSetLogLevel);
 }
 
 function log(level: DebugLevel, scope: string | undefined, messages: any[]) {

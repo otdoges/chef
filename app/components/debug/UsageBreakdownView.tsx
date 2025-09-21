@@ -242,12 +242,15 @@ function BreakdownView({
     'Prompt - Anthropic (Cached)': chefBreakdown.promptTokens.anthropic.cached,
     'Prompt - OpenAI (Uncached)': chefBreakdown.promptTokens.openai.uncached,
     'Prompt - OpenAI (Cached)': chefBreakdown.promptTokens.openai.cached,
+    'Prompt - OpenRouter (Uncached)': chefBreakdown.promptTokens.openrouter.uncached,
+    'Prompt - OpenRouter (Cached)': chefBreakdown.promptTokens.openrouter.cached,
     'Prompt - XAI (Uncached)': chefBreakdown.promptTokens.xai.uncached,
     'Prompt - XAI (Cached)': chefBreakdown.promptTokens.xai.cached,
     'Prompt - Google (Uncached)': chefBreakdown.promptTokens.google.uncached,
     'Prompt - Google (Cached)': chefBreakdown.promptTokens.google.cached,
     'Completion - Anthropic': chefBreakdown.completionTokens.anthropic,
     'Completion - OpenAI': chefBreakdown.completionTokens.openai,
+    'Completion - OpenRouter': chefBreakdown.completionTokens.openrouter,
     'Completion - XAI': chefBreakdown.completionTokens.xai,
     'Completion - Google': chefBreakdown.completionTokens.google,
   };
@@ -303,6 +306,7 @@ async function getUsageBreakdown(messages: Message[]) {
     anthropicCacheCreationInputTokens: 0,
     anthropicCacheReadInputTokens: 0,
     openaiCachedPromptTokens: 0,
+    openrouterCachedPromptTokens: 0,
     xaiCachedPromptTokens: 0,
     googleCachedContentTokenCount: 0,
     googleThoughtsTokenCount: 0,
@@ -316,6 +320,7 @@ async function getUsageBreakdown(messages: Message[]) {
     anthropicCacheCreationInputTokens: 0,
     anthropicCacheReadInputTokens: 0,
     openaiCachedPromptTokens: 0,
+    openrouterCachedPromptTokens: 0,
     xaiCachedPromptTokens: 0,
     googleCachedContentTokenCount: 0,
     googleThoughtsTokenCount: 0,
@@ -327,6 +332,7 @@ async function getUsageBreakdown(messages: Message[]) {
     completionTokens: {
       anthropic: 0,
       openai: 0,
+      openrouter: 0,
       xai: 0,
       google: 0,
     },
@@ -336,6 +342,10 @@ async function getUsageBreakdown(messages: Message[]) {
         cached: 0,
       },
       openai: {
+        uncached: 0,
+        cached: 0,
+      },
+      openrouter: {
         uncached: 0,
         cached: 0,
       },
@@ -490,6 +500,7 @@ function addUsage(usageA: Usage, update: Usage) {
   usageA.anthropicCacheCreationInputTokens += update.anthropicCacheCreationInputTokens;
   usageA.anthropicCacheReadInputTokens += update.anthropicCacheReadInputTokens;
   usageA.openaiCachedPromptTokens += update.openaiCachedPromptTokens;
+  usageA.openrouterCachedPromptTokens += update.openrouterCachedPromptTokens;
   usageA.xaiCachedPromptTokens += update.xaiCachedPromptTokens;
 }
 
@@ -497,6 +508,7 @@ type ChefBreakdown = {
   completionTokens: {
     anthropic: number;
     openai: number;
+    openrouter: number;
     xai: number;
     google: number;
   };
@@ -506,6 +518,10 @@ type ChefBreakdown = {
       cached: number;
     };
     openai: {
+      uncached: number;
+      cached: number;
+    };
+    openrouter: {
       uncached: number;
       cached: number;
     };
@@ -523,12 +539,15 @@ type ChefBreakdown = {
 function addBreakdown(breakdownA: ChefBreakdown, update: ChefBreakdown) {
   breakdownA.completionTokens.anthropic += update.completionTokens.anthropic;
   breakdownA.completionTokens.openai += update.completionTokens.openai;
+  breakdownA.completionTokens.openrouter += update.completionTokens.openrouter;
   breakdownA.completionTokens.xai += update.completionTokens.xai;
   breakdownA.completionTokens.google += update.completionTokens.google;
   breakdownA.promptTokens.anthropic.cached += update.promptTokens.anthropic.cached;
   breakdownA.promptTokens.anthropic.uncached += update.promptTokens.anthropic.uncached;
   breakdownA.promptTokens.openai.cached += update.promptTokens.openai.cached;
   breakdownA.promptTokens.openai.uncached += update.promptTokens.openai.uncached;
+  breakdownA.promptTokens.openrouter.cached += update.promptTokens.openrouter.cached;
+  breakdownA.promptTokens.openrouter.uncached += update.promptTokens.openrouter.uncached;
   breakdownA.promptTokens.xai.cached += update.promptTokens.xai.cached;
   breakdownA.promptTokens.xai.uncached += update.promptTokens.xai.uncached;
   breakdownA.promptTokens.google.cached += update.promptTokens.google.cached;

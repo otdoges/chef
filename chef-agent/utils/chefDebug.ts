@@ -1,7 +1,7 @@
 import type { WebContainer } from '@webcontainer/api';
 import type { Message } from 'ai';
 
-type ChefDebug = {
+type ZapDevDebug = {
   messages?: Message[];
   parsedMessages?: Message[];
   webcontainer?: WebContainer;
@@ -10,11 +10,11 @@ type ChefDebug = {
   sessionId?: string;
 };
 
-export function setChefDebugProperty(key: keyof ChefDebug, value: ChefDebug[keyof ChefDebug]) {
+export function setZapDevDebugProperty(key: keyof ZapDevDebug, value: ZapDevDebug[keyof ZapDevDebug]) {
   if (typeof window === 'undefined') {
-    console.warn('setChefDebugProperty called on server, ignoring');
+    console.warn('setZapDevDebugProperty called on server, ignoring');
     return;
   }
-  (window as any).__CHEF_DEBUG = (window as any).__CHEF_DEBUG || {};
-  (window as any).__CHEF_DEBUG[key] = value;
+  (window as any).__ZAPDEV_DEBUG = (window as any).__ZAPDEV_DEBUG || {};
+  (window as any).__ZAPDEV_DEBUG[key] = value;
 }
