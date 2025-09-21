@@ -11,7 +11,7 @@ import { useLocalStorage } from '@uidotdev/usehooks';
 import { api } from '@convex/_generated/api';
 import { toast } from 'sonner';
 import { fetchOptIns } from '~/lib/convexOptins';
-import { setChefDebugProperty } from 'chef-agent/utils/chefDebug';
+import { setZapDevDebugProperty } from 'chef-agent/utils/chefDebug';
 import { useAuth } from '@workos-inc/authkit-react';
 type ChefAuthState =
   | {
@@ -70,7 +70,7 @@ export const ChefAuthProvider = ({
       setSessionIdFromLocalStorage(sessionId);
       sessionIdStore.set(sessionId);
       if (sessionId) {
-        setChefDebugProperty('sessionId', sessionId);
+        setZapDevDebugProperty('sessionId', sessionId);
       }
     }
 

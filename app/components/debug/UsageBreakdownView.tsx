@@ -19,7 +19,7 @@ import { decompressWithLz4 } from '~/lib/compression.client';
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { getConvexAuthToken } from '~/lib/stores/sessionId';
 import { useConvex } from 'convex/react';
-import { setChefDebugProperty } from 'chef-agent/utils/chefDebug';
+import { setZapDevDebugProperty } from 'chef-agent/utils/chefDebug';
 // Register Chart.js components - needs to include ALL required elements
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -98,7 +98,7 @@ export function UsageBreakdownView({
         const decompressed = decompressWithLz4(new Uint8Array(await blob.arrayBuffer()));
         const messages = JSON.parse(new TextDecoder().decode(decompressed));
         setMessages(messages);
-        setChefDebugProperty('messages', messages);
+        setZapDevDebugProperty('messages', messages);
       }
       void parseFileContent(fileContent);
     } else {
@@ -119,7 +119,7 @@ export function UsageBreakdownView({
         const decompressed = decompressWithLz4(new Uint8Array(bytes));
         const messages = JSON.parse(new TextDecoder().decode(decompressed));
         setMessages(messages);
-        setChefDebugProperty('messages', messages);
+        setZapDevDebugProperty('messages', messages);
       };
       void fetchUsageData();
     }

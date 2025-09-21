@@ -21,7 +21,7 @@ import { appendEnvVarIfNotSet } from '~/utils/envFileUtils';
 import { getFileUpdateCounter } from '~/lib/stores/fileUpdateCounter';
 import { chatSyncState } from './chatSyncState';
 import { FILE_EVENTS_DEBOUNCE_MS } from '~/lib/stores/files';
-import { setChefDebugProperty } from 'chef-agent/utils/chefDebug';
+import { setZapDevDebugProperty } from 'chef-agent/utils/chefDebug';
 
 const TEMPLATE_URL = '/template-snapshot-63fbe575.bin';
 
@@ -87,7 +87,7 @@ async function setupContainer(
   // we won't receive file events for snapshot files.
   await workbenchStore.prewarmWorkdir(container);
 
-  setChefDebugProperty('webcontainer', container);
+  setZapDevDebugProperty('webcontainer', container);
 
   setContainerBootState(ContainerBootState.DOWNLOADING_DEPENDENCIES);
   const npm = await container.spawn('npm', ['install', '--no-fund', '--no-deprecated']);

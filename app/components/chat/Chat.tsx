@@ -36,7 +36,7 @@ import { useConvexSessionIdOrNullOrLoading } from '~/lib/stores/sessionId';
 import type { Id } from 'convex/_generated/dataModel';
 import { VITE_PROVISION_HOST } from '~/lib/convexProvisionHost';
 import type { ProviderType } from '~/lib/common/annotations';
-import { setChefDebugProperty } from 'chef-agent/utils/chefDebug';
+import { setZapDevDebugProperty } from 'chef-agent/utils/chefDebug';
 import { MissingApiKey } from './MissingApiKey';
 import { models, type ModelProvider } from '~/components/chat/ModelSelector';
 import { useLaunchDarkly } from '~/lib/hooks/useLaunchDarkly';
@@ -429,12 +429,12 @@ export const Chat = memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [setMessages, syncState.subchatIndex]);
 
-    setChefDebugProperty('messages', messages);
+    setZapDevDebugProperty('messages', messages);
 
     // AKA "processed messages," since parsing has side effects
     const { parsedMessages, parseMessages } = useMessageParser(partCache);
 
-    setChefDebugProperty('parsedMessages', parsedMessages);
+    setZapDevDebugProperty('parsedMessages', parsedMessages);
 
     useEffect(() => {
       chatStore.setKey('started', messages.length > 0 || (!!subchats && subchats.length > 1));
