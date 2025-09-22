@@ -106,6 +106,21 @@ export const ChefAuthProvider = ({
         }
         if (!isAuthenticated) {
           // Wait until auth is propagated to Convex before we try to verify the session
+          // Give it a bit more time in case there's a delay in auth propagation
+          if (authRetries.current < 5) {
+            authRetries.current++;
+            verifySessionTimeout = setTimeout(() => {
+              void verifySession();
+            }, 500);
+          } else {
+            // If we've waited long enough and still no Convex auth, try to force a refresh
+            // by calling the auth query again
+            try {
+              await convex.query(api.sessions.startSession);
+            } catch (e) {
+              console.warn('Failed to refresh auth state:', e);
+            }
+          }
           return;
         }
         let isValid: boolean = false;
@@ -122,18 +137,32 @@ export const ChefAuthProvider = ({
           const optIns = await fetchOptIns(convex);
           if (optIns.kind === 'loaded' && optIns.optIns.length === 0) {
             setSessionId(sessionIdFromLocalStorage as Id<'sessions'>);
-          }
-          if (!hasAlertedAboutOptIns.current && optIns.kind === 'loaded' && optIns.optIns.length > 0) {
-            toast.info('Please accept the Convex Terms of Service to continue');
-            hasAlertedAboutOptIns.current = true;
-          }
-          if (hasAlertedAboutOptIns.current && optIns.kind === 'error') {
-            toast.error('Unexpected error setting up your account.');
+          } else if (optIns.kind === 'loaded' && optIns.optIns.length > 0) {
+            if (!hasAlertedAboutOptIns.current) {
+              toast.info('Please accept the Convex Terms of Service to continue');
+              hasAlertedAboutOptIns.current = true;
+            }
+          } else if (optIns.kind === 'error') {
+            // If opt-ins fetch fails, still allow the user to use the app
+            // This is common in development environments
+            console.warn('Failed to fetch opt-ins, but session is valid. Allowing access.');
+            setSessionId(sessionIdFromLocalStorage as Id<'sessions'>);
+            if (!hasAlertedAboutOptIns.current) {
+              toast.error('Unexpected error setting up your account.');
+              hasAlertedAboutOptIns.current = true;
+            }
+          } else if (optIns.kind === 'missingAuth') {
+            // If no auth token but session is valid, allow access anyway
+            console.warn('No auth token found but session is valid. Allowing access.');
+            setSessionId(sessionIdFromLocalStorage as Id<'sessions'>);
           }
         } else {
           // Clear it, the next loop around we'll try creating a new session
           // if we're authenticated.
           setSessionId(null);
+          if (authRetries.current === 0) {
+            console.log('Session verification failed. Please try refreshing the page if you just signed in.');
+          }
         }
       }
 

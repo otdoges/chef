@@ -1,7 +1,6 @@
 import { Sheet } from '@ui/Sheet';
 import type { Message } from 'ai';
 import React, { type ReactNode, type RefCallback, useCallback, useEffect, useMemo, useState } from 'react';
-import Landing from '~/components/landing/Landing';
 import { Workbench } from '~/components/workbench/Workbench.client';
 import type { ToolStatus } from '~/lib/common/types';
 import type { TerminalInitializationOptions } from '~/types/terminal';
@@ -312,7 +311,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   }}
                 />
               )}
-              {!chatStarted && <Landing />}
             </div>
             <Workbench
               chatStarted={chatStarted}

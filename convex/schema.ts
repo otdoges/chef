@@ -228,6 +228,28 @@ export default defineSchema({
   })
     .index("byChatId", ["chatId"])
     .index("byStorageId", ["promptCoreMessagesStorageId"]),
+
+  backgroundAgentTasks: defineTable({
+    chatId: v.id("chats"),
+    sessionId: v.id("sessions"),
+    trigger: v.union(v.literal("github"), v.literal("figma")),
+    link: v.string(),
+    status: v.union(v.literal("pending"), v.literal("running"), v.literal("completed"), v.literal("failed")),
+    tasks: v.array(
+      v.object({
+        taskId: v.string(),
+        description: v.string(),
+        status: v.union(v.literal("pending"), v.literal("in-progress"), v.literal("done")),
+      }),
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastInstructionMessageId: v.optional(v.string()),
+    error: v.optional(v.string()),
+  })
+    .index("byChat", ["chatId"])
+    .index("bySession", ["sessionId"])
+    .index("byChatAndLink", ["chatId", "link"]),
   // Inspired by the migrations component, but for our migrations that we don't use the component for.
   migrations: defineTable({
     name: v.string(),

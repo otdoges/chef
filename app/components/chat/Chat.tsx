@@ -92,6 +92,93 @@ const retryState = atom({
   numFailures: 0,
   nextRetry: Date.now(),
 });
+
+type BackgroundAgentTrigger = 'github' | 'figma';
+
+type BackgroundAgentInstructionState = {
+  link: string;
+  trigger: BackgroundAgentTrigger;
+  applied: boolean;
+  taskId?: string;
+};
+
+const IMPORT_LINK_REGEX = /(https?:\/\/[^\s]+)/gi;
+
+const BACKGROUND_TASK_TEMPLATES: Record<BackgroundAgentTrigger, string[]> = {
+  github: [
+    'Review the GitHub import and sync any required assets or code into the workspace.',
+    'Install or refresh project dependencies if needed (e.g. `pnpm install`).',
+    'Run the project lint command in autofix mode (e.g. `pnpm lint:fix`) and collect any remaining issues.',
+    'Resolve any remaining lint errors or formatting violations that require manual intervention.',
+    'Re-run lint to verify a clean result and summarize the fixes that were applied.',
+  ],
+  figma: [
+    'Review the Figma import and sync any required assets or generated code into the workspace.',
+    'Install or refresh project dependencies if needed (e.g. `pnpm install`).',
+    'Run the project lint command in autofix mode (e.g. `pnpm lint:fix`) and collect any remaining issues.',
+    'Resolve any remaining lint errors or formatting violations that require manual intervention.',
+    'Re-run lint to verify a clean result and summarize the fixes that were applied.',
+  ],
+};
+
+function sanitizeLink(raw: string): string {
+  return raw.replace(/[),.;]+$/u, '');
+}
+
+function detectBackgroundAgentTrigger(link: string): BackgroundAgentTrigger | null {
+  try {
+    const url = new URL(link);
+    const host = url.hostname.toLowerCase();
+    if (host === 'github.com' || host.endsWith('.github.com')) {
+      return 'github';
+    }
+    if (host === 'figma.com' || host.endsWith('.figma.com')) {
+      return 'figma';
+    }
+  } catch (error) {
+    console.debug('Failed to parse potential import link', { link, error });
+  }
+  return null;
+}
+
+function composeBackgroundInstructionMessage(state: BackgroundAgentInstructionState): string {
+  const sourceLabel = state.trigger === 'github' ? 'GitHub repository' : 'Figma project';
+  const taskLines = BACKGROUND_TASK_TEMPLATES[state.trigger].map((task) => `- [ ] ${task}`).join('\n');
+  const header = [
+    '[[background-agent]]',
+    `A ${sourceLabel} import was detected: ${state.link}`,
+    'Spin up a background lint-fix workflow immediately.',
+    'Create and execute a concrete plan that completes these steps:',
+    taskLines,
+    'Work autonomously, keep terminal actions concise, and share a brief completion summary when lint passes.',
+  ];
+  if (state.taskId) {
+    header.push(`Task tracker reference: ${state.taskId}`);
+  }
+  return header.join('\n');
+}
+
+function findBackgroundAgentLinks(message: string): Array<{ link: string; trigger: BackgroundAgentTrigger }> {
+  const matches: Array<{ link: string; trigger: BackgroundAgentTrigger }> = [];
+  const seen = new Set<string>();
+  for (const rawMatch of message.matchAll(IMPORT_LINK_REGEX)) {
+    const rawLink = rawMatch[0];
+    if (!rawLink) {
+      continue;
+    }
+    const cleanedLink = sanitizeLink(rawLink);
+    if (seen.has(cleanedLink)) {
+      continue;
+    }
+    const trigger = detectBackgroundAgentTrigger(cleanedLink);
+    if (!trigger) {
+      continue;
+    }
+    seen.add(cleanedLink);
+    matches.push({ link: cleanedLink, trigger });
+  }
+  return matches;
+}
 export const Chat = memo(
   ({
     initialMessages,
@@ -185,6 +272,9 @@ export const Chat = memo(
         () => workbenchStore.userWrites,
       ),
     );
+
+    const backgroundAgentInstructions = useRef<Map<string, BackgroundAgentInstructionState>>(new Map());
+    const pendingBackgroundStatusUpdates = useRef<Set<string>>(new Set());
 
     const checkApiKeyForCurrentModel = useCallback(
       (model: ModelSelection): { hasMissingKey: boolean; provider?: ModelProvider; requireKey: boolean } => {
@@ -281,6 +371,31 @@ export const Chat = memo(
       }
     }, [apiKey, convex, modelSelection, setDisableChatMessage, useGeminiAuto]);
 
+    const flushPendingBackgroundAgents = useCallback(async () => {
+      if (!sessionId || typeof sessionId !== 'string') {
+        return;
+      }
+      if (pendingBackgroundStatusUpdates.current.size === 0) {
+        return;
+      }
+      const taskIds = Array.from(pendingBackgroundStatusUpdates.current);
+      pendingBackgroundStatusUpdates.current.clear();
+      await Promise.all(
+        taskIds.map((taskId) =>
+          convex
+            .mutation((api as any).backgroundAgents.updateStatus, {
+              sessionId: sessionId as Id<'sessions'>,
+              taskId,
+              status: 'running',
+              taskStatusUpdates: [{ taskId: 'task-1', status: 'in-progress' }],
+            })
+            .catch((error) => {
+              console.error('Failed to update background agent status', error);
+            }),
+        ),
+      );
+    }, [convex, sessionId]);
+
     const { messages, status, stop, append, setMessages, reload, error } = useChat({
       initialMessages,
       api: '/api/chat',
@@ -354,10 +469,36 @@ export const Chat = memo(
           minCollapsedMessagesSize,
         );
 
-        const characterCounts = chatContextManager.current.calculatePromptCharacterCounts(preparedMessages);
+        let finalMessages = preparedMessages;
+        const instructionsToApply: Array<{ key: string; state: BackgroundAgentInstructionState }> = [];
+        backgroundAgentInstructions.current.forEach((state, key) => {
+          if (!state.applied) {
+            instructionsToApply.push({ key, state });
+          }
+        });
+
+        if (instructionsToApply.length > 0) {
+          finalMessages = [...preparedMessages];
+          for (const { key, state } of instructionsToApply) {
+            const content = composeBackgroundInstructionMessage(state);
+            finalMessages.push({
+              id: `background-agent-${key}-${Date.now()}`,
+              role: 'system',
+              content,
+              parts: [{ type: 'text', text: content }],
+            });
+            backgroundAgentInstructions.current.set(key, { ...state, applied: true });
+            if (state.taskId) {
+              pendingBackgroundStatusUpdates.current.add(state.taskId);
+            }
+          }
+          void flushPendingBackgroundAgents();
+        }
+
+        const characterCounts = chatContextManager.current.calculatePromptCharacterCounts(finalMessages);
 
         return {
-          messages: preparedMessages,
+          messages: finalMessages,
           firstUserMessage: messages.filter((message) => message.role == 'user').length == 1,
           chatInitialId,
           token,
@@ -570,6 +711,40 @@ export const Chat = memo(
           workbenchStore.resetAllFileModifications();
         }
         maybeRelevantFilesMessage.content = messageInput;
+        const backgroundLinks = findBackgroundAgentLinks(messageInput);
+        if (backgroundLinks.length > 0) {
+          const chatId = chatIdStore.get();
+          for (const { link, trigger } of backgroundLinks) {
+            const key = chatId ? `${chatId}::${link}` : link;
+            const existingState = backgroundAgentInstructions.current.get(key);
+            if (!existingState) {
+              backgroundAgentInstructions.current.set(key, { link, trigger, applied: false });
+            }
+
+            if (chatId && sessionId && typeof sessionId === 'string' && (!existingState || !existingState.taskId)) {
+              try {
+                const result = await convex.mutation((api as any).backgroundAgents.enqueue, {
+                  sessionId: sessionId as Id<'sessions'>,
+                  chatId,
+                  link,
+                  trigger,
+                });
+                backgroundAgentInstructions.current.set(key, {
+                  link,
+                  trigger,
+                  applied: existingState?.applied ?? false,
+                  taskId: result.taskId,
+                });
+                if (!result.alreadyExists) {
+                  toast.success('Queued a background agent to clean up lint from the import.');
+                }
+              } catch (error) {
+                console.error('Failed to enqueue background agent tasks', error);
+                toast.error('Unable to queue the background lint agent.');
+              }
+            }
+          }
+        }
         maybeRelevantFilesMessage.parts.push({
           type: 'text',
           text: messageInput,
