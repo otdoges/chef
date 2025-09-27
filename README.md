@@ -111,3 +111,5 @@ Note: ZapDev is accessible at http://127.0.0.1:{port}/ and will not work properl
 - `template/` contains the template that we use to start all ZapDev projects.
 
 - `test-kitchen/` contains a test harness for the ZapDev agent loop.
+
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/otdoges/zapdev-2?utm_source=oss&utm_medium=github&utm_campaign=otdoges%2Fzapdev-2&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
