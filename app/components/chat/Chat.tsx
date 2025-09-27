@@ -10,11 +10,11 @@ import { chatStore } from '~/lib/stores/chatId';
 import { workbenchStore } from '~/lib/stores/workbench.client';
 import { MAX_CONSECUTIVE_DEPLOY_ERRORS, type ModelSelection } from '~/utils/constants';
 import { cubicEasingFn } from '~/utils/easings';
-import { createScopedLogger } from 'chef-agent/utils/logger';
+import { createScopedLogger } from 'zapdev-agent/utils/logger';
 import { BaseChat } from './BaseChat.client';
 import { createSampler } from '~/utils/sampler';
 import { filesToArtifacts } from '~/utils/fileUtils';
-import { ChatContextManager } from 'chef-agent/ChatContextManager';
+import { ChatContextManager } from 'zapdev-agent/ChatContextManager';
 import { selectedTeamSlugStore, setSelectedTeamSlug, useSelectedTeamSlug } from '~/lib/stores/convexTeams';
 import { convexProjectStore } from '~/lib/stores/convexProject';
 import { toast } from 'sonner';
@@ -36,7 +36,7 @@ import { useConvexSessionIdOrNullOrLoading } from '~/lib/stores/sessionId';
 import type { Id } from 'convex/_generated/dataModel';
 import { VITE_PROVISION_HOST } from '~/lib/convexProvisionHost';
 import type { ProviderType } from '~/lib/common/annotations';
-import { setZapDevDebugProperty } from 'chef-agent/utils/chefDebug';
+import { setZapDevDebugProperty } from 'zapdev-agent/utils/chefDebug';
 import { MissingApiKey } from './MissingApiKey';
 import { models, type ModelProvider } from '~/components/chat/ModelSelector';
 import { useLaunchDarkly } from '~/lib/hooks/useLaunchDarkly';
@@ -622,13 +622,13 @@ export const Chat = memo(
         (retries.numFailures >= MAX_RETRIES || now < retries.nextRetry) &&
         !hasApiKeySet(modelSelection, useGeminiAuto, apiKey)
       ) {
-        let message: string | ReactNode = 'Chef is too busy cooking right now. ';
+        let message: string | ReactNode = 'ZapDev is busy right now. ';
         if (retries.numFailures >= MAX_RETRIES) {
           message = (
             <>
               {message}
               Please{' '}
-              <a href="https://chef.convex.dev/settings" className="text-content-link hover:underline">
+              <a href="https://zapdev.convex.dev/settings" className="text-content-link hover:underline">
                 enter your own API key
               </a>
               .
@@ -640,7 +640,7 @@ export const Chat = memo(
             <>
               {message}
               Please try again in {remaining} or{' '}
-              <a href="https://chef.convex.dev/settings" className="text-content-link hover:underline">
+              <a href="https://zapdev.convex.dev/settings" className="text-content-link hover:underline">
                 enter your own API key
               </a>
               .
@@ -932,20 +932,20 @@ export function NoTokensText({ resetDisableChatMessage }: { resetDisableChatMess
         {referralCode && referralStats?.left !== 0 && (
           <div className="w-full space-y-2">
             <p className="text-sm text-content-secondary">
-              Refer a friend and Get 85,000 free Chef tokens for each
+              Refer a friend and Get 85,000 free ZapDev tokens for each
               {referralStats?.left === 5 || !referralStats ? ' (limit 5)' : ` (${referralStats.left} / 5)`}
             </p>
             <div className="flex items-center gap-2">
               <input
                 type="text"
                 readOnly
-                value={`https://convex.dev/try-chef/${referralCode}`}
+                value={`https://convex.dev/try-zapdev/${referralCode}`}
                 className="flex-1 rounded-md border bg-bolt-elements-background-depth-2 px-3 py-1.5 text-sm text-content-primary"
               />
               <Button
                 variant="neutral"
                 size="xs"
-                onClick={() => copyToClipboard(`https://convex.dev/try-chef/${referralCode}`)}
+                onClick={() => copyToClipboard(`https://convex.dev/try-zapdev/${referralCode}`)}
                 tip="Copy link"
                 icon={<ClipboardIcon />}
               />

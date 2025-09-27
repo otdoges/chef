@@ -1,4 +1,4 @@
-import { WORK_DIR } from 'chef-agent/constants';
+import { WORK_DIR } from 'zapdev-agent/constants';
 
 export const PROMPT_COOKIE_KEY = 'cachedPrompt';
 

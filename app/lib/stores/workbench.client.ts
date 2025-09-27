@@ -585,12 +585,12 @@ export class WorkbenchStore {
       }
     }
 
-    // Add a README.md file specific to Chef here, but don't clobber an existing one
+    // Add a README.md file specific to ZapDev here, but don't clobber an existing one
     const readmeContent = generateReadmeContent(
       description.value ?? 'project',
       args.convexProject?.deploymentName ?? null,
     );
-    const readmePath = hasReadme ? `CHEF_README.md` : 'README.md';
+    const readmePath = hasReadme ? `ZAPDEV_README.md` : 'README.md';
     zip.file(readmePath, readmeContent);
     if (!hasSetupMjs) {
       zip.file('setup.mjs', setupMjsContent);

@@ -288,8 +288,8 @@ const userKeyApiFetch = (provider: ModelProvider) => {
 };
 
 const withOpenRouterHeaders = (baseFetch: typeof fetch) => {
-  const referer = getEnv('OPENROUTER_SITE_URL') ?? 'https://chef.convex.dev';
-  const title = getEnv('OPENROUTER_APP_NAME') ?? 'Chef';
+  const referer = getEnv('OPENROUTER_SITE_URL') ?? 'https://zapdev.convex.dev';
+  const title = getEnv('OPENROUTER_APP_NAME') ?? 'ZapDev';
   return async (input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(init?.headers ?? {});
     if (!headers.has('HTTP-Referer')) {

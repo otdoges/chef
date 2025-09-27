@@ -1,12 +1,12 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://chef.convex.dev/github-header-dark.svg">
-    <img alt="ZapDev by Convex'" src="https://chef.convex.dev/github-header-light.svg" width="600">
+    <source media="(prefers-color-scheme: dark)" srcset="https://zapdev.convex.dev/github-header-dark.svg">
+    <img alt="ZapDev by Convex'" src="https://zapdev.convex.dev/github-header-light.svg" width="600">
   </picture>
 </p>
 
-[ZapDev](https://chef.convex.dev) is the only AI app builder that knows backend. It builds full-stack web apps with a built-in database, zero config auth, file uploads,
-real-time UIs, and background workflows. If you want to check out the secret sauce that powers ZapDev, you can view or download the system prompt [here](https://github.com/get-convex/chef/releases/latest).
+[ZapDev](https://zapdev.convex.dev) is the only AI app builder that knows backend. It builds full-stack web apps with a built-in database, zero config auth, file uploads,
+real-time UIs, and background workflows. If you want to check out the secret sauce that powers ZapDev, you can view or download the system prompt [here](https://github.com/get-convex/zapdev/releases/latest).
 
 ZapDev's capabilities are enabled by being built on top of [Convex](https://convex.dev), the open-source reactive database designed to make life easy for web app developers. The "magic" in ZapDev is just the fact that it's using Convex's APIs, which are an ideal fit for codegen.
 
@@ -18,9 +18,9 @@ This project is a fork of the `stable` branch of [bolt.diy](https://github.com/s
 
 ## Getting Started
 
-Visit our [documentation](https://docs.convex.dev/chef) to learn more about ZapDev and check out our prompting [guide](https://stack.convex.dev/chef-cookbook-tips-working-with-ai-app-builders).
+Visit our [documentation](https://docs.convex.dev/zapdev) to learn more about ZapDev and check out our prompting [guide](https://stack.convex.dev/chef-cookbook-tips-working-with-ai-app-builders).
 
-The easiest way to build with ZapDev is through our hosted [webapp](https://chef.convex.dev), which includes a generous free tier. If you want to
+The easiest way to build with ZapDev is through our hosted [webapp](https://zapdev.convex.dev), which includes a generous free tier. If you want to
 run ZapDev locally, you can follow the guide below.
 
 ### Running Locally
@@ -32,8 +32,8 @@ Note: This will use the hosted Convex control plane to provision Convex projects
 Clone the GitHub respository and `cd` into the directory by running the following commands:
 
 ```bash
-git clone https://github.com/get-convex/chef.git
-cd chef
+git clone https://github.com/get-convex/zapdev.git
+cd zapdev
 ```
 
 **2. Set up local environment**
@@ -102,9 +102,9 @@ Note: ZapDev is accessible at http://127.0.0.1:{port}/ and will not work properl
   - `lib/` contains client-side logic for syncing local state with the server
   - `routes/` defines some client and server routes
 
-- `chef-agent/` handles the agentic loop by injecting system prompts, defining tools, and calling out to model providers.
+- `zapdev-agent/` handles the agentic loop by injecting system prompts, defining tools, and calling out to model providers.
 
-- `chefshot/` defines a CLI interface for interacting with the ZapDev webapp.
+- `zapshot/` defines a CLI interface for interacting with the ZapDev webapp.
 
 - `convex/` contains the database that stores chats and user metadata.
 

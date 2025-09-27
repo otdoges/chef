@@ -74,10 +74,10 @@ export function ApiKeyCard() {
         <h2 className="mb-2 text-xl font-semibold text-content-primary">API Keys</h2>
 
         <p className="mb-1 max-w-prose text-sm text-content-secondary">
-          You can use your own API keys to cook with Chef.
+          You can use your own API keys to build with ZapDev.
         </p>
         <p className="mb-4 max-w-prose text-sm text-content-secondary">
-          By default, Chef will use tokens built into your Convex plan.
+          By default, ZapDev will use tokens built into your Convex plan.
         </p>
         <div className="space-y-4">
           <AlwaysUseKeyCheckbox

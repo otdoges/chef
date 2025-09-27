@@ -94,15 +94,15 @@ const CodeShow: FC<CodeShowProps> = ({ code, ...props }) => {
 const ShowInner: FC<ShowInnerProps> = ({ share, className }) => {
   const [showIframe, setShowIframe] = useState(false);
   const defaultAuthor = {
-    username: 'Chef User',
+    username: 'ZapDev User',
     avatar: '',
   } as const;
 
   const author = share.author ?? defaultAuthor;
   const avatarSrc = author.avatar || generateDefaultAvatar(author.username);
 
-  // Chef SVG icon inline
-  const ChefIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  // ZapDev SVG icon inline
+  const ZapDevIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg width="20" height="12" viewBox="0 0 72 42" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
       <path
         d="M70.2469 18.1945L68.3899 17.3926C67.7147 17.0972 66.7017 16.7173 65.5622 16.4641C62.9455 15.9154 60.7086 16.1687 58.9782 17.2238C57.5854 18.0679 56.5303 19.334 55.8972 21.0222L53.787 20.6002L53.5337 21.7819C52.0987 20.7268 50.2839 20.0515 48.1315 19.8405C45.2615 19.5873 42.687 20.2625 40.7456 21.8663C40.5345 22.0352 40.2813 22.2462 40.1125 22.4572C38.9307 20.3048 36.8205 19.123 33.9927 19.2074C33.3597 19.2074 32.7688 19.2918 32.2201 19.4607L32.0513 13.3831L21.4156 13.6786L21.5 17.688C19.0099 15.4934 15.4647 14.5649 11.413 15.2824C4.0271 16.5485 -0.0667901 22.4994 1.24157 30.0963C1.87465 33.8526 3.56285 36.8492 6.09516 38.664C7.99439 40.0568 10.3579 40.732 12.9746 40.732C15.5913 40.732 14.7894 40.6476 15.7179 40.4788C18.2502 40.0568 20.3605 39.086 22.0065 37.7355V38.7484L41.4631 38.2419V37.6933C42.898 38.5796 44.6707 39.1705 46.6965 39.3393C47.0763 39.3393 47.4562 39.3815 47.7938 39.3815C49.3554 39.3815 50.8748 39.0438 52.2254 38.453L52.0143 39.4659L62.439 41.5761L64.4648 31.5313L67.4192 32.1222L69.1074 23.6812L70.2047 18.1945H70.2469ZM21.7111 26.931L19.6008 26.8043L21.6688 26.0025V26.8888L21.7111 26.931ZM14.1563 30.8983C13.5655 30.9827 13.27 30.8138 13.059 30.6028C12.7636 30.3496 12.2571 29.6743 12.0039 28.1549C11.8773 27.3952 11.5818 24.9895 12.8902 24.7363C12.9746 24.7363 13.059 24.7363 13.1434 24.7363C13.4389 24.7363 13.7765 24.9051 14.0297 26.0025L14.6628 28.3659V29.3789C14.7472 30.8138 14.3674 30.856 14.1141 30.8983H14.1563Z"
@@ -141,7 +141,7 @@ const ShowInner: FC<ShowInnerProps> = ({ share, className }) => {
       <div className="mb-1 grid w-full grid-cols-1 items-center gap-2 md:grid-cols-2">
         {/* Title, smaller on mobile */}
         <h1 className="m-0 truncate text-left text-lg font-semibold md:text-xl">{share.description}</h1>
-        {/* Desktop: Clone app in Chef with Chef icon, mobile: What's Chef? */}
+        {/* Desktop: Clone app in ZapDev with Chef icon, mobile: What's Chef? */}
         <div className="flex justify-end md:justify-end">
           <Button
             href={
@@ -151,16 +151,16 @@ const ShowInner: FC<ShowInnerProps> = ({ share, className }) => {
             }
             variant="neutral"
             className="flex items-center gap-2"
-            icon={<ChefIcon />}
+            icon={<ZapDevIcon />}
             tip={
               typeof window !== 'undefined' && window.innerWidth < 768
                 ? undefined
-                : `New users: clone this app and get 85,000 bonus Chef tokens, plus some for the author of this app!
+                : `New users: clone this app and get 85,000 bonus ZapDev tokens, plus some for the author of this app!
 ` /* TODO this is buggy */
             }
           >
-            <span className="hidden md:inline">Clone app in Chef</span>
-            <span className="inline md:hidden">What&apos;s Chef?</span>
+            <span className="hidden md:inline">Clone app in ZapDev</span>
+            <span className="inline md:hidden">What&apos;s ZapDev?</span>
           </Button>
         </div>
       </div>
@@ -177,7 +177,7 @@ const ShowInner: FC<ShowInnerProps> = ({ share, className }) => {
             </Button>
           ) : (
             <Button href="/" variant="primary" className="ml-2">
-              Try Chef
+              Try ZapDev
             </Button>
           )}
         </div>
@@ -227,12 +227,12 @@ const ShowInner: FC<ShowInnerProps> = ({ share, className }) => {
       {share.referralCode && (
         <div className="mt-2 hidden rounded-lg border border-bolt-elements-background-depth-3 bg-bolt-elements-background-depth-2 p-4 md:block">
           <div className="text-center">
-            <p className="text-base font-medium text-content-primary">Join Convex and get 85,000 bonus Chef tokens.</p>
+            <p className="text-base font-medium text-content-primary">Join Convex and get 85,000 bonus ZapDev tokens.</p>
             <p className="mt-1 text-xs text-content-secondary">
               When you sign up, {author.username} will earn bonus resources too!
             </p>
             <Button
-              href={`https://convex.dev/try-chef/${share.referralCode}`}
+              href={`https://convex.dev/try-zapdev/${share.referralCode}`}
               target="_blank"
               variant="primary"
               className="mt-2"

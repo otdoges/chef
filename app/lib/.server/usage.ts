@@ -102,7 +102,7 @@ export async function recordUsage(
   const Authorization = `Bearer ${token}`;
   const url = `${provisionHost}/api/dashboard/teams/${teamSlug}/usage/record_tokens`;
 
-  logger.info('Logging total usage', JSON.stringify(totalUsageBilledFor), 'corresponding to chef tokens', chefTokens);
+  logger.info('Logging total usage', JSON.stringify(totalUsageBilledFor), 'corresponding to ZapDev tokens', chefTokens);
   const response = await fetch(url, {
     method: 'POST',
     headers: {

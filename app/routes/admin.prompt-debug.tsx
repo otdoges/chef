@@ -1,5 +1,5 @@
 import { useTeamsInitializer } from '~/lib/stores/startup/useTeamsInitializer';
-import { ChefAuthProvider } from '~/components/chat/ChefAuthWrapper';
+import { ZapDevAuthProvider } from '~/components/chat/ZapDevAuthWrapper';
 import type { MetaFunction } from '@vercel/remix';
 import { ArrowLeftIcon } from '@radix-ui/react-icons';
 import { useState, useEffect } from 'react';
@@ -8,16 +8,16 @@ import { useSearchParams } from '@remix-run/react';
 import { useIsAdmin } from '~/lib/hooks/useDebugPrompt';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Prompt Debug | Chef Admin' }];
+  return [{ title: 'Prompt Debug | ZapDev Admin' }];
 };
 
 export default function PromptDebug() {
   useTeamsInitializer();
 
   return (
-    <ChefAuthProvider redirectIfUnauthenticated={true}>
+    <ZapDevAuthProvider redirectIfUnauthenticated={true}>
       <PromptDebugContent />
-    </ChefAuthProvider>
+    </ZapDevAuthProvider>
   );
 }
 

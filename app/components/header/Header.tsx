@@ -12,7 +12,7 @@ import { DownloadButton } from './DownloadButton';
 import { LoggedOutHeaderButtons } from './LoggedOutHeaderButtons';
 import { profileStore, setProfile } from '~/lib/stores/profile';
 import { Menu as MenuComponent, MenuItem as MenuItemComponent } from '@ui/Menu';
-import { SESSION_ID_KEY } from '~/components/chat/ChefAuthWrapper';
+import { SESSION_ID_KEY } from '~/components/chat/ZapDevAuthWrapper';
 import { FeedbackButton } from './FeedbackButton';
 import { DiscordButton } from './DiscordButton';
 import { PromptDebugButton } from './PromptDebugButton';
@@ -63,10 +63,10 @@ export function Header({ hideSidebarIcon = false }: { hideSidebarIcon?: boolean 
         )}
         <a href="/">
           {/* The logo is shifted up slightly, to visually align it with the hamburger icon. */}
-          <img src="/chef.svg" alt="Chef logo" width={72} height={42} className="relative -top-1" />
+          <img src="/zapdev-logo.svg" alt="ZapDev logo" width={72} height={42} className="relative -top-1" />
         </a>
         <a
-          href="https://github.com/get-convex/chef"
+          href="https://github.com/get-convex/zapdev"
           target="_blank"
           rel="noopener noreferrer"
           className="relative hidden cursor-pointer select-none items-center gap-1.5 whitespace-nowrap rounded-md border bg-background-secondary p-1 text-sm font-medium text-content-primary transition-colors hover:bg-background-primary focus-visible:border focus-visible:border-border-selected focus-visible:outline-none sm:flex"

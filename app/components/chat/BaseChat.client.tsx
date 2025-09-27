@@ -285,7 +285,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               {maintenanceMode && (
                 <div className="mx-auto my-4 max-w-chat">
                   <div className="relative rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700 dark:border-red-600 dark:bg-red-900 dark:text-red-200">
-                    <p className="font-bold">Chef is temporarily unavailable</p>
+                    <p className="font-bold">ZapDev is temporarily unavailable</p>
                     <p className="text-sm">
                       We&apos;re experiencing high load and will be back soon. Thank you for your patience.
                     </p>

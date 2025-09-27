@@ -1,8 +1,8 @@
 import { anthropic } from '@ai-sdk/anthropic';
-import { zapdevTask } from './chefTask.js';
+import { zapdevTask } from './zapdevTask.js';
 import { ZapDevModel } from './types.js';
 import { mkdirSync } from 'fs';
-import { zapdevSetLogLevel } from 'chef-agent/utils/logger.js';
+import { zapdevSetLogLevel } from 'zapdev-agent/utils/logger.js';
 
 zapdevSetLogLevel('info');
 

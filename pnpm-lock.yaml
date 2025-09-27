@@ -207,12 +207,12 @@ importers:
       chart.js:
         specifier: ^4.4.9
         version: 4.4.9
-      chef-agent:
+      zapdev-agent:
         specifier: workspace:*
-        version: link:chef-agent
-      chefshot:
+        version: link:zapdev-agent
+      zapshot:
         specifier: workspace:*
-        version: link:chefshot
+        version: link:zapshot
       classnames:
         specifier: ^2.5.1
         version: 2.5.1
@@ -491,7 +491,7 @@ importers:
         specifier: ^3.24.1
         version: 3.24.1
 
-  chef-agent:
+  zapdev-agent:
     dependencies:
       ai:
         specifier: ^4.3.2
@@ -519,7 +519,7 @@ importers:
         specifier: ^2.1.9
         version: 2.1.9(@edge-runtime/vm@5.0.0)(@types/node@20.17.30)(jsdom@26.0.0)(sass-embedded@1.83.4)(sugarss@4.0.1(postcss@8.5.3))
 
-  chefshot:
+  zapshot:
     dependencies:
       '@playwright/test':
         specifier: ^1.42.1
@@ -567,9 +567,9 @@ importers:
       braintrust:
         specifier: ^0.0.199
         version: 0.0.199(@aws-sdk/credential-provider-web-identity@3.782.0)(openai@4.93.0(ws@8.18.0)(zod@3.24.1))(react@18.3.1)(sswr@2.2.0(svelte@5.28.1))(svelte@5.28.1)(vue@3.5.13(typescript@5.8.3))(zod@3.24.1)
-      chef-agent:
+      zapdev-agent:
         specifier: workspace:*
-        version: link:../chef-agent
+        version: link:../zapdev-agent
       portfinder:
         specifier: ^1.0.36
         version: 1.0.36

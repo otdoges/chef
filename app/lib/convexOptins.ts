@@ -44,7 +44,7 @@ export async function fetchOptIns(convex: ConvexReactClient): Promise<
   }
   if (!response.ok) {
     // We cannot fetch the opt ins, which means we probably failed to create an account
-    // dynamically (which we can't do from Chef)
+    // dynamically (which we can't do from ZapDev)
     return {
       kind: 'error',
       error: 'Failed to fetch opt ins',

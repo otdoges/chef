@@ -33,7 +33,7 @@ export function useNewChatContainerSetup() {
         await waitForBootStepCompleted(ContainerBootState.STARTING);
         await setupContainer(convex, { snapshotUrl: TEMPLATE_URL, allowNpmInstallFailure: false });
       } catch (error: any) {
-        toast.error('Failed to setup Chef environment. Try reloading the page.');
+        toast.error('Failed to setup ZapDev environment. Try reloading the page.');
         setContainerBootState(ContainerBootState.ERROR, error);
       }
     };
@@ -61,7 +61,7 @@ export function useExistingChatContainerSetup(loadedChatId: string | undefined) 
         }
         await setupContainer(convex, { snapshotUrl, allowNpmInstallFailure: true });
       } catch (error: any) {
-        toast.error('Failed to setup Chef environment. Try reloading the page.');
+        toast.error('Failed to setup ZapDev environment. Try reloading the page.');
         setContainerBootState(ContainerBootState.ERROR, error);
       }
     };
@@ -96,7 +96,7 @@ async function setupContainer(
 
   if (exitCode !== 0) {
     if (options.allowNpmInstallFailure) {
-      toast.error(`Failed to install dependencies. Fix your package.json and tell Chef to redeploy.`, {
+      toast.error(`Failed to install dependencies. Fix your package.json and try redeploying.`, {
         duration: Infinity,
       });
       console.error(`npm install failed with exit code ${exitCode}: ${output}`);

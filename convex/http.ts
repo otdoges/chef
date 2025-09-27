@@ -184,7 +184,7 @@ http.route({
     const header = request.headers.get("X-Chef-Admin-Token");
     const authHeader = request.headers.get("Authorization");
     if (authHeader === null) {
-      if (header !== process.env.CHEF_ADMIN_TOKEN) {
+      if (header !== (process.env.ZAPDEV_ADMIN_TOKEN || process.env.CHEF_ADMIN_TOKEN)) {
         return new Response(JSON.stringify({ code: "Unauthorized", message: "Invalid admin token" }), {
           status: 401,
           headers: {

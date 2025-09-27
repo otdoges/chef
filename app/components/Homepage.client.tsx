@@ -1,5 +1,5 @@
 import { Chat } from './chat/Chat';
-import { ChefAuthProvider } from './chat/ChefAuthWrapper';
+import { ZapDevAuthProvider } from './chat/ZapDevAuthWrapper';
 import { useRef } from 'react';
 import { useConvexChatHomepage } from '~/lib/stores/startup';
 import { Toaster } from '~/components/ui/Toaster';
@@ -17,11 +17,11 @@ export function Homepage() {
   // NB: On this path, we render `ChatImpl` immediately.
   return (
     <>
-      <ChefAuthProvider redirectIfUnauthenticated={false}>
+      <ZapDevAuthProvider redirectIfUnauthenticated={false}>
         <UserProvider>
           <ChatWrapper initialId={initialId.current} />
         </UserProvider>
-      </ChefAuthProvider>
+      </ZapDevAuthProvider>
       <Toaster />
     </>
   );

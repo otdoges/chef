@@ -76,8 +76,8 @@ export function ShareButton() {
       if (currentShare.code) {
         const { origin } = window.location;
         const url =
-          origin === 'https://chef.convex.dev'
-            ? `https://chef.show/${currentShare.code}`
+          origin === 'https://zapdev.convex.dev'
+            ? `https://zapdev.show/${currentShare.code}`
             : `${origin}/share/${currentShare.code}`;
         setShareUrl(url);
       }
@@ -224,7 +224,7 @@ export function ShareButton() {
                         {referralStats?.left !== 0 && (
                           <div className="space-y-1">
                             <p className="text-xs text-content-secondary group-hover:text-content-secondary/80">
-                              Links on this page include your referral code: signups will grant you 85,000 free Chef
+                              Links on this page include your referral code: signups will grant you 85,000 free ZapDev
                               tokens each
                               {referralStats?.left === 5 || !referralStats
                                 ? ' (limit 5)'
@@ -335,13 +335,13 @@ export function ShareButton() {
                           <input
                             type="text"
                             readOnly
-                            value={`https://convex.dev/try-chef/${referralCode}`}
+                            value={`https://convex.dev/try-zapdev/${referralCode}`}
                             className="flex-1 rounded-md border bg-bolt-elements-background-depth-2 px-3 py-1.5 text-sm text-content-primary"
                           />
                           <Button
                             variant="neutral"
                             size="xs"
-                            onClick={() => copyToClipboard(`https://convex.dev/try-chef/${referralCode}`)}
+                            onClick={() => copyToClipboard(`https://convex.dev/try-zapdev/${referralCode}`)}
                             tip="Copy link"
                             icon={<ClipboardIcon />}
                           />

@@ -1,7 +1,7 @@
 {
-  "name": "chefshot",
+  "name": "zapshot",
   "version": "1.0.0",
-  "description": "Run a prompt through Chef via browser automation",
+  "description": "Run a prompt through ZapDev via browser automation",
   "main": "interact.ts",
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "postinstall": "playwright install chromium"
   },
   "bin": {
-    "chefshot": "./chefshot.js"
+    "zapshot": "./zapshot.js"
   },
   "dependencies": {
     "@playwright/test": "^1.42.1",

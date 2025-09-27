@@ -29,12 +29,12 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
     { property: 'og:site_name', content: 'Chef' },
     {
       property: 'og:image',
-      content: thumbnailUrl || 'https://chef.convex.dev/social_preview_share.png',
+      content: thumbnailUrl || 'https://zapdev.convex.dev/social_preview_share.png',
     },
     { property: 'twitter:card', content: 'summary_large_image' },
     {
       property: 'twitter:image',
-      content: thumbnailUrl || 'https://chef.convex.dev/social_preview_share.png',
+      content: thumbnailUrl || 'https://zapdev.convex.dev/social_preview_share.png',
     },
     { property: 'twitter:title', content: ogTitle },
     { property: 'twitter:description', content: ogDesc },

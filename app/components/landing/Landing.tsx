@@ -4,7 +4,7 @@ export default function Landing() {
       <div className="overflow-hidden rounded-lg border border-neutral-2 dark:border-neutral-10">
         <div className="flex items-center border-b border-neutral-2 bg-neutral-1/20 px-4 py-2 dark:border-neutral-10 dark:bg-neutral-11">
           <a
-            href="https://github.com/get-convex/chef"
+            href="https://github.com/get-convex/zapdev"
             className="flex items-center gap-2 hover:text-neutral-9 dark:hover:text-neutral-4"
           >
             <svg
@@ -24,9 +24,9 @@ export default function Landing() {
         </div>
         <div className="flex flex-col gap-6 px-4 py-6 text-lg text-neutral-9 dark:text-neutral-2">
           <p>
-            Chef is open-source, check out the GitHub repo{' '}
+            ZapDev is open-source, check out the GitHub repo{' '}
             <a
-              href="https://github.com/get-convex/chef"
+              href="https://github.com/get-convex/zapdev"
               className="font-semibold text-bolt-elements-button-primary-backgroundHover hover:underline dark:text-white"
             >
               here
@@ -44,9 +44,9 @@ export default function Landing() {
             primitives directly to your code generation, your apps are automatically equipped with optimal backend
             patterns and best practices. Your full-stack apps come with a built-in database, zero config auth, file
             uploads, real-time UIs, and background workflows. If you want to check out the secret sauce that powers
-            Chef, you can view or download the system prompt{' '}
+            ZapDev, you can view or download the system prompt{' '}
             <a
-              href="https://github.com/get-convex/chef/releases/latest"
+              href="https://github.com/get-convex/zapdev/releases/latest"
               className="font-semibold text-bolt-elements-button-primary-backgroundHover hover:underline dark:text-white"
             >
               here
@@ -54,7 +54,7 @@ export default function Landing() {
             .
           </p>
           <p>
-            As mentioned above, Chef&apos;s capabilities are enabled by being built on top of{' '}
+            As mentioned above, ZapDev&apos;s capabilities are enabled by being built on top of{' '}
             <a
               href="https://convex.dev"
               className="font-semibold text-bolt-elements-button-primary-backgroundHover hover:underline dark:text-white"
@@ -62,13 +62,13 @@ export default function Landing() {
               Convex
             </a>
             , the open-source reactive database designed to make life easy for web app developers. The
-            &ldquo;magic&rdquo; in Chef is just the fact that it&apos;s using Convex&apos;s APIs, which are an ideal fit
+            &ldquo;magic&rdquo; in ZapDev is just the fact that it&apos;s using Convex&apos;s APIs, which are an ideal fit
             for codegen.
           </p>
           <p>
-            Development of the Chef is led by the Convex team. We{' '}
+            Development of ZapDev is led by the Convex team. We{' '}
             <a
-              href="https://github.com/get-convex/chef/blob/main/CONTRIBUTING.md"
+              href="https://github.com/get-convex/zapdev/blob/main/CONTRIBUTING.md"
               className="font-semibold text-bolt-elements-button-primary-backgroundHover hover:underline dark:text-white"
             >
               welcome bug fixes
@@ -94,7 +94,7 @@ export default function Landing() {
           </p>
           <div className="flex justify-center">
             <a
-              href="https://github.com/get-convex/chef"
+              href="https://github.com/get-convex/zapdev"
               className="inline-flex items-center gap-2 rounded-lg border border-neutral-3 bg-neutral-1/50 px-3 py-2 text-lg text-neutral-12 transition-all hover:bg-neutral-1 dark:border-neutral-700 dark:bg-neutral-11 dark:text-neutral-2 dark:hover:bg-neutral-10"
             >
               <svg className="size-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">

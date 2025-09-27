@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - 'chef-agent/prompts/**'
+      - 'zapdev-agent/prompts/**'
   workflow_dispatch: # Allow manual triggering
 
 permissions:
@@ -37,25 +37,25 @@ jobs:
         with:
           bump_version_scheme: patch
           tag_prefix: prompts-v
-          release_name: 'Chef System Prompts <RELEASE_VERSION>'
+          release_name: 'ZapDev System Prompts <RELEASE_VERSION>'
           release_body: |
-            ## Chef System Prompts Release
+            ## ZapDev System Prompts Release
 
-            This release contains the compiled system prompts used by the Chef AI assistant.
+            This release contains the compiled system prompts used by the ZapDev AI assistant.
 
             ### Files included:
-            - `chef-system-prompts.txt` - Complete system prompts as sent to the AI model
+            - `zapdev-system-prompts.txt` - Complete system prompts as sent to the AI model
 
-            Generated automatically from the latest prompt changes in the chef-agent.
+            Generated automatically from the latest prompt changes in the zapdev-agent.
 
       - name: Upload Release Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f "chef-system-prompts.txt" ]; then
-            gh release upload "${{ steps.create_release.outputs.tag_name }}" "chef-system-prompts.txt" --clobber
-            echo "✅ Uploaded chef-system-prompts.txt to release"
+          if [ -f "zapdev-system-prompts.txt" ]; then
+            gh release upload "${{ steps.create_release.outputs.tag_name }}" "zapdev-system-prompts.txt" --clobber
+            echo "✅ Uploaded zapdev-system-prompts.txt to release"
           else
-            echo "❌ chef-system-prompts.txt not found"
+            echo "❌ zapdev-system-prompts.txt not found"
             exit 1
           fi

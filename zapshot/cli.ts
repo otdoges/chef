@@ -58,7 +58,7 @@ const generateCommand = new Command('generate')
       }),
   )
   .addOption(
-    new Option('--prod', 'Use production ZapDev at chef.convex.dev').conflicts(['zapdev-url', 'dev', 'local-build']),
+    new Option('--prod', 'Use production ZapDev at zapdev.convex.dev').conflicts(['zapdev-url', 'dev', 'local-build']),
   )
   .addOption(
     new Option('--dev', 'Use local dev server at http://127.0.0.1:5173').conflicts(['zapdev-url', 'prod', 'local-build']),
@@ -87,7 +87,7 @@ const generateCommand = new Command('generate')
     if (options.dev) {
       zapdevUrl = 'http://127.0.0.1:5173';
     } else if (options.prod) {
-      zapdevUrl = 'https://chef.convex.dev';
+      zapdevUrl = 'https://zapdev.convex.dev';
     } else if (options.zapdevUrl) {
       zapdevUrl = options.zapdevUrl;
     } else {
@@ -201,7 +201,7 @@ const downloadCommand = new Command('download')
       process.exit(1);
     }
     log(`Looking for ZapDev at ${zapdevSiteUrl}`);
-    const zapdevAdminToken = process.env.ZAPDEV_ADMIN_TOKEN;
+    const zapdevAdminToken = process.env.ZAPDEV_ADMIN_TOKEN || process.env.CHEF_ADMIN_TOKEN;
     if (!zapdevAdminToken) {
       log('Error: Missing required environment variables');
       log('Please set ZAPDEV_ADMIN_TOKEN in your .env.local file');
@@ -212,7 +212,7 @@ const downloadCommand = new Command('download')
       method: 'POST',
       body: JSON.stringify({ chatUuid }),
       headers: {
-        'X-ZapDev-Admin-Token': zapdevAdminToken,
+        'X-Chef-Admin-Token': zapdevAdminToken,
       },
     });
     if (!response.ok) {
@@ -241,6 +241,6 @@ const downloadCommand = new Command('download')
 
 const program = new Command();
 
-program.name('chefshot').description('ZapDev AI CLI').addCommand(generateCommand).addCommand(downloadCommand);
+program.name('zapshot').description('ZapDev AI CLI').addCommand(generateCommand).addCommand(downloadCommand);
 
 program.parse();

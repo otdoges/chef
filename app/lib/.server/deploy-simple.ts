@@ -8,10 +8,10 @@ export async function deploy({ request }: ActionFunctionArgs) {
     const file = formData.get('file') as File;
     const deploymentName = formData.get('deploymentName') as string;
     const token = formData.get('token') as string;
-    let chefDeploySecret: string | undefined;
+    let zapdevDeploySecret: string | undefined;
 
-    if (globalThis.process.env.CHEF_DEPLOY_SECRET) {
-      chefDeploySecret = globalThis.process.env.CHEF_DEPLOY_SECRET;
+    if (globalThis.process.env.ZAPDEV_DEPLOY_SECRET || globalThis.process.env.CHEF_DEPLOY_SECRET) {
+      zapdevDeploySecret = globalThis.process.env.ZAPDEV_DEPLOY_SECRET || globalThis.process.env.CHEF_DEPLOY_SECRET;
     }
 
     if (!file) {
@@ -28,8 +28,8 @@ export async function deploy({ request }: ActionFunctionArgs) {
     const headers: Record<string, string> = {
       Authorization,
     };
-    if (chefDeploySecret) {
-      headers['convex-chef-deploy-secret'] = chefDeploySecret;
+    if (zapdevDeploySecret) {
+      headers['convex-chef-deploy-secret'] = zapdevDeploySecret;
     }
     const response = await fetch(`${PROVISION_HOST}/api/hosting/deploy?deploymentName=${deploymentName}`, {
       method: 'POST',

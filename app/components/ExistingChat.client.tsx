@@ -1,6 +1,6 @@
 import { useConvexChatExisting } from '~/lib/stores/startup';
 import { Chat } from './chat/Chat';
-import { ChefAuthProvider } from './chat/ChefAuthWrapper';
+import { ZapDevAuthProvider } from './chat/ZapDevAuthWrapper';
 import { setPageLoadChatId } from '~/lib/stores/chatId';
 import { sessionIdStore } from '~/lib/stores/sessionId';
 import { Loading } from './Loading';
@@ -19,11 +19,11 @@ export function ExistingChat({ chatId }: { chatId: string }) {
 
   return (
     <>
-      <ChefAuthProvider redirectIfUnauthenticated={true}>
+      <ZapDevAuthProvider redirectIfUnauthenticated={true}>
         <UserProvider>
           <ExistingChatWrapper chatId={chatId} />
         </UserProvider>
-      </ChefAuthProvider>
+      </ZapDevAuthProvider>
       <Toaster />
     </>
   );
@@ -65,7 +65,7 @@ function ExistingChatWrapper({ chatId }: { chatId: string }) {
   } else if (bootState.state === ContainerBootState.STARTING_BACKUP) {
     loading = 'Starting backup...';
   } else if (bootState.state !== ContainerBootState.READY) {
-    loading = 'Loading Chef environment...';
+    loading = 'Loading ZapDev environment...';
   }
 
   const isError = bootState.state === ContainerBootState.ERROR;
@@ -104,7 +104,7 @@ function NotFound() {
     <div className="flex h-full flex-col items-center justify-center p-8 text-center">
       <h1 className="mb-4 font-display text-4xl font-bold tracking-tight text-content-primary">Not found</h1>
       <p className="mb-4 text-balance text-content-secondary">
-        The Chef project you’re looking for can’t be found. Maybe it was deleted or created with another account?
+        The ZapDev project you’re looking for can’t be found. Maybe it was deleted or created with another account?
       </p>
       <a
         href="/"

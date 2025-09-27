@@ -7,8 +7,8 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     // The code below enables dev tools like taking screenshots of your site
-    // while it is being developed on chef.convex.dev.
-    // Feel free to remove this code if you're no longer developing your app with Chef.
+    // while it is being developed on zapdev.convex.dev.
+    // Feel free to remove this code if you're no longer developing your app with ZapDev.
     mode === "development"
       ? {
           name: "inject-chef-dev",
@@ -22,7 +22,7 @@ window.addEventListener('message', async (message) => {
   if (message.source !== window.parent) return;
   if (message.data.type !== 'chefPreviewRequest') return;
 
-  const worker = await import('https://chef.convex.dev/scripts/worker.bundled.mjs');
+  const worker = await import('https://zapdev.convex.dev/scripts/worker.bundled.mjs');
   await worker.respondToMessage(message);
 });
             `,
@@ -33,7 +33,7 @@ window.addEventListener('message', async (message) => {
           },
         }
       : null,
-    // End of code for taking screenshots on chef.convex.dev.
+    // End of code for taking screenshots on zapdev.convex.dev.
   ].filter(Boolean),
   resolve: {
     alias: {

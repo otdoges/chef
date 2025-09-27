@@ -103,7 +103,7 @@ function addUsage(totalUsage: Usage, payload: UsageAnnotation) {
   totalUsage.bedrockCacheReadInputTokens += payload.providerMetadata?.bedrock?.usage?.cacheReadInputTokens ?? 0;
 }
 
-export type ChefTokenBreakdown = {
+export type ZapDevTokenBreakdown = {
   completionTokens: {
     anthropic: number;
     openai: number;
@@ -125,9 +125,9 @@ export type ChefTokenBreakdown = {
 // TODO this these wrong
 // Based on how the final generation came from (which may not be the provided used for the other generations came from)
 // https://www.notion.so/convex-dev/Chef-Pricing-1cfb57ff32ab80f5aa2ecf3420523e2f
-export function calculateChefTokens(totalUsage: Usage, provider?: ProviderType) {
-  let chefTokens = 0;
-  const breakdown = {
+export function calculateZapDevTokens(totalUsage: Usage, provider?: ProviderType) {
+  let zapdevTokens = 0;
+  const breakdown: ZapDevTokenBreakdown = {
     completionTokens: {
       anthropic: 0,
       openai: 0,
@@ -165,71 +165,71 @@ export function calculateChefTokens(totalUsage: Usage, provider?: ProviderType) 
   };
   if (provider === 'Anthropic') {
     const anthropicCompletionTokens = totalUsage.completionTokens * 200;
-    chefTokens += anthropicCompletionTokens;
+    zapdevTokens += anthropicCompletionTokens;
     breakdown.completionTokens.anthropic = anthropicCompletionTokens;
     const anthropicPromptTokens = totalUsage.promptTokens * 40;
-    chefTokens += anthropicPromptTokens;
+    zapdevTokens += anthropicPromptTokens;
     breakdown.promptTokens.anthropic.uncached = anthropicPromptTokens;
     const cacheCreationInputTokens = totalUsage.anthropicCacheCreationInputTokens * 40;
-    chefTokens += cacheCreationInputTokens;
+    zapdevTokens += cacheCreationInputTokens;
     breakdown.promptTokens.anthropic.cached = cacheCreationInputTokens;
     const cacheReadInputTokens = totalUsage.anthropicCacheReadInputTokens * 3;
-    chefTokens += cacheReadInputTokens;
+    zapdevTokens += cacheReadInputTokens;
     breakdown.promptTokens.anthropic.cached += cacheReadInputTokens;
   } else if (provider === 'Bedrock') {
     const bedrockCompletionTokens = totalUsage.completionTokens * 200;
-    chefTokens += bedrockCompletionTokens;
+    zapdevTokens += bedrockCompletionTokens;
     breakdown.completionTokens.bedrock = bedrockCompletionTokens;
     const bedrockPromptTokens = totalUsage.promptTokens * 40;
-    chefTokens += bedrockPromptTokens;
+    zapdevTokens += bedrockPromptTokens;
     breakdown.promptTokens.bedrock.uncached = bedrockPromptTokens;
     const cacheWriteInputTokens = totalUsage.bedrockCacheWriteInputTokens * 40;
-    chefTokens += cacheWriteInputTokens;
+    zapdevTokens += cacheWriteInputTokens;
     breakdown.promptTokens.bedrock.cached = cacheWriteInputTokens;
     const cacheReadInputTokens = totalUsage.bedrockCacheReadInputTokens * 3;
-    chefTokens += cacheReadInputTokens;
+    zapdevTokens += cacheReadInputTokens;
     breakdown.promptTokens.bedrock.cached += cacheReadInputTokens;
   } else if (provider === 'OpenAI') {
     const openaiCompletionTokens = totalUsage.completionTokens * 100;
-    chefTokens += openaiCompletionTokens;
+    zapdevTokens += openaiCompletionTokens;
     breakdown.completionTokens.openai = openaiCompletionTokens;
     const openaiCachedPromptTokens = totalUsage.openaiCachedPromptTokens * 5;
-    chefTokens += openaiCachedPromptTokens;
+    zapdevTokens += openaiCachedPromptTokens;
     breakdown.promptTokens.openai.cached = openaiCachedPromptTokens;
     const openaiUncachedPromptTokens = (totalUsage.promptTokens - totalUsage.openaiCachedPromptTokens) * 26;
-    chefTokens += openaiUncachedPromptTokens;
+    zapdevTokens += openaiUncachedPromptTokens;
     breakdown.promptTokens.openai.uncached = openaiUncachedPromptTokens;
   } else if (provider === 'XAI') {
     // TODO: This is a guess. Billing like anthropic
     const xaiCompletionTokens = totalUsage.completionTokens * 200;
-    chefTokens += xaiCompletionTokens;
+    zapdevTokens += xaiCompletionTokens;
     breakdown.completionTokens.xai = xaiCompletionTokens;
     const xaiPromptTokens = totalUsage.promptTokens * 40;
-    chefTokens += xaiPromptTokens;
+    zapdevTokens += xaiPromptTokens;
     breakdown.promptTokens.xai.uncached = xaiPromptTokens;
     // TODO - never seen xai set this field to anything but 0, so holding off until we understand.
-    //chefTokens += totalUsage.xaiCachedPromptTokens * 3;
+    //zapdevTokens += totalUsage.xaiCachedPromptTokens * 3;
   } else if (provider === 'OpenRouter') {
     const openrouterCompletionTokens = totalUsage.completionTokens * 200;
-    chefTokens += openrouterCompletionTokens;
+    zapdevTokens += openrouterCompletionTokens;
     breakdown.completionTokens.openrouter = openrouterCompletionTokens;
     const openrouterPromptTokens = totalUsage.promptTokens * 40;
-    chefTokens += openrouterPromptTokens;
+    zapdevTokens += openrouterPromptTokens;
     breakdown.promptTokens.openrouter.uncached = openrouterPromptTokens;
     const openrouterCachedPromptTokens = totalUsage.openrouterCachedPromptTokens * 40;
-    chefTokens += openrouterCachedPromptTokens;
+    zapdevTokens += openrouterCachedPromptTokens;
     breakdown.promptTokens.openrouter.cached = openrouterCachedPromptTokens;
   } else if (provider === 'Google') {
     const googleCompletionTokens = totalUsage.completionTokens * 140;
-    chefTokens += googleCompletionTokens;
+    zapdevTokens += googleCompletionTokens;
     const googleThoughtTokens = totalUsage.googleThoughtsTokenCount * 140;
-    chefTokens += googleThoughtTokens;
+    zapdevTokens += googleThoughtTokens;
     breakdown.completionTokens.google = googleCompletionTokens;
     const googlePromptTokens = (totalUsage.promptTokens - totalUsage.googleCachedContentTokenCount) * 18;
-    chefTokens += googlePromptTokens;
+    zapdevTokens += googlePromptTokens;
     breakdown.promptTokens.google.uncached = googlePromptTokens;
     const googleCachedContentTokens = totalUsage.googleCachedContentTokenCount * 5;
-    chefTokens += googleCachedContentTokens;
+    zapdevTokens += googleCachedContentTokens;
     breakdown.promptTokens.google.cached = googleCachedContentTokens;
   } else {
     captureMessage('WARNING: Unknown provider. Not recording usage. Giving away for free.', {
@@ -241,7 +241,7 @@ export function calculateChefTokens(totalUsage: Usage, provider?: ProviderType) 
   }
 
   return {
-    chefTokens,
+    zapdevTokens,
     breakdown,
   };
 }
