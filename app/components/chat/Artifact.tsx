@@ -11,8 +11,8 @@ import { classNames } from '~/utils/classNames';
 import { cubicEasingFn } from '~/utils/easings';
 import { summarize } from '~/utils/summarize';
 import { captureException } from '@sentry/remix';
-import type { RelativePath } from 'chef-agent/utils/workDir';
-import { getAbsolutePath } from 'chef-agent/utils/workDir';
+import type { RelativePath } from 'zapdev-agent/utils/workDir';
+import { getAbsolutePath } from 'zapdev-agent/utils/workDir';
 import { Spinner } from '@ui/Spinner';
 const highlighterOptions = {
   langs: ['shell'],

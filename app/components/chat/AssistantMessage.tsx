@@ -2,11 +2,11 @@ import { memo, useMemo } from 'react';
 import { Markdown } from './Markdown';
 import type { Message } from 'ai';
 import { ToolCall } from './ToolCall';
-import { makePartId, type PartId } from 'chef-agent/partId.js';
+import { makePartId, type PartId } from 'zapdev-agent/partId.js';
 import { ExclamationTriangleIcon, DotFilledIcon } from '@radix-ui/react-icons';
 import { parseAnnotations, type ProviderType, type Usage, type UsageAnnotation } from '~/lib/common/annotations';
 import { useLaunchDarkly } from '~/lib/hooks/useLaunchDarkly';
-import { calculateChefTokens, usageFromGeneration, type ChefTokenBreakdown } from '~/lib/common/usage';
+import { calculateZapDevTokens, usageFromGeneration, type ZapDevTokenBreakdown } from '~/lib/common/usage';
 import { captureMessage } from '@sentry/remix';
 
 interface AssistantMessageProps {
@@ -106,10 +106,10 @@ function displayModelAndUsage({
   showUsageAnnotations: boolean;
 }) {
   const modelDisplay = displayModel(model ?? { provider: 'Unknown', model: undefined });
-  // Note: These numbers are the LLM-reported tokens, not Chef tokens (i.e. not
+  // Note: These numbers are the LLM-reported tokens, not ZapDev tokens (i.e. not
   // what we use to bill users). This attempts to take into account the logic where
   // we don't charge for tokens produced from failed tool calls. This should
-  // probably be re-worked to use Chef tokens.
+  // probably be re-worked to use ZapDev tokens.
 
   const usageDisplay = usageAnnotation
     ? displayUsage(usageAnnotation, model?.provider ?? 'Unknown', showUsageAnnotations)
@@ -140,16 +140,16 @@ function displayUsage(usageAnnotation: UsageAnnotation, provider: ProviderType, 
     usage: usageAnnotation,
     providerMetadata: usageAnnotation.providerMetadata,
   });
-  const { chefTokens, breakdown } = calculateChefTokens(usage, provider);
+  const { zapdevTokens, breakdown } = calculateZapDevTokens(usage, provider);
   return (
     <div className="text-xs text-content-secondary">
-      Chef Tokens: {displayChefTokenNumber(chefTokens)}
+      ZapDev Tokens: {displayChefTokenNumber(zapdevTokens)}
       {showUsageAnnotations ? `, ${displayBreakdownForSingleAnnotation(breakdown)}` : ''}
     </div>
   );
 }
 
-function displayBreakdownForSingleAnnotation(breakdown: ChefTokenBreakdown) {
+function displayBreakdownForSingleAnnotation(breakdown: ZapDevTokenBreakdown) {
   // A single annotation should always have a single provider.
   if (breakdown.completionTokens.anthropic > 0) {
     return `${displayChefTokenNumber(breakdown.promptTokens.anthropic.uncached)} uncached, ${displayChefTokenNumber(breakdown.promptTokens.anthropic.cached)} cached, ${displayChefTokenNumber(breakdown.completionTokens.anthropic)} completion`;

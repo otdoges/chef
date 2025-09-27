@@ -29,17 +29,17 @@ export function UsageCard() {
     <div className="rounded-lg border bg-bolt-elements-background-depth-1 shadow-sm">
       <div className="p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-content-primary">Chef Usage</h2>
+          <h2 className="text-xl font-semibold text-content-primary">ZapDev Usage</h2>
           <div className="ml-auto">
             <TeamSelector selectedTeamSlug={selectedTeamSlug} setSelectedTeamSlug={setSelectedTeamSlug} />
           </div>
         </div>
-        <p className="mb-1 text-sm text-content-secondary">Your Convex team comes with tokens included for Chef.</p>
+        <p className="mb-1 text-sm text-content-secondary">Your Convex team comes with tokens included for ZapDev.</p>
         <p className="mb-1 text-sm text-content-secondary">
           On paid Convex subscriptions, additional usage will be subject to metered billing.
         </p>
         <p className="mb-4 text-sm text-content-secondary">
-          On free plans, Chef will not be usable once you hit the limit for the current billing period.
+          On free plans, ZapDev will not be usable once you hit the limit for the current billing period.
         </p>
         <div className="space-y-4">
           <div className="w-80 max-w-80">
@@ -78,7 +78,7 @@ export function UsageCard() {
                 <h3>You&apos;ve used all the tokens included with your free plan.</h3>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
-                    href={`https://dashboard.convex.dev/t/${selectedTeamSlug}/settings/billing?source=chef`}
+                    href={`https://dashboard.convex.dev/t/${selectedTeamSlug}/settings/billing?source=zapdev`}
                     icon={<ExternalLinkIcon />}
                   >
                     Upgrade your plan

@@ -1,8 +1,8 @@
 export function generateReadmeContent(description: string, convexDeploymentName: string | null) {
   return `# ${description}
   
-This is a project built with [Chef](https://chef.convex.dev) using [Convex](https://convex.dev) as its backend.
- You can find docs about Chef with useful information like how to deploy to production [here](https://docs.convex.dev/chef).
+This is a project built with [ZapDev](https://zapdev.convex.dev) using [Convex](https://convex.dev) as its backend.
+ You can find docs about ZapDev with useful information like how to deploy to production [here](https://docs.convex.dev/zapdev).
   
 ${convexDeploymentName ? generateConvexDeploymentContent(convexDeploymentName) : ''}
   
@@ -16,7 +16,7 @@ The backend code is in the \`convex\` directory.
 
 ## App authentication
 
-Chef apps use [Convex Auth](https://auth.convex.dev/) with Anonymous auth for easy sign in. You may wish to change this before deploying your app.
+ZapDev apps use [Convex Auth](https://auth.convex.dev/) with Anonymous auth for easy sign in. You may wish to change this before deploying your app.
 
 ## Developing and deploying your app
 

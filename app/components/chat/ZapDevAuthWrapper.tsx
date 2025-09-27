@@ -11,9 +11,9 @@ import { useLocalStorage } from '@uidotdev/usehooks';
 import { api } from '@convex/_generated/api';
 import { toast } from 'sonner';
 import { fetchOptIns } from '~/lib/convexOptins';
-import { setZapDevDebugProperty } from 'chef-agent/utils/chefDebug';
+import { setZapDevDebugProperty } from 'zapdev-agent/utils/chefDebug';
 import { useAuth } from '@workos-inc/authkit-react';
-type ChefAuthState =
+type ZapDevAuthState =
   | {
       kind: 'loading';
     }
@@ -25,29 +25,29 @@ type ChefAuthState =
       sessionId: Id<'sessions'>;
     };
 
-const ChefAuthContext = createContext<{
-  state: ChefAuthState;
-}>(null as unknown as { state: ChefAuthState });
+const ZapDevAuthContext = createContext<{
+  state: ZapDevAuthState;
+}>(null as unknown as { state: ZapDevAuthState });
 
-export function useChefAuth() {
-  const state = useContext(ChefAuthContext);
+export function useZapDevAuth() {
+  const state = useContext(ZapDevAuthContext);
   if (state === null) {
-    throw new Error('useChefAuth must be used within a ChefAuthProvider');
+    throw new Error('useZapDevAuth must be used within a ZapDevAuthProvider');
   }
   return state.state;
 }
 
-export function useChefAuthContext() {
-  const state = useContext(ChefAuthContext);
+export function useZapDevAuthContext() {
+  const state = useContext(ZapDevAuthContext);
   if (state === null) {
-    throw new Error('useChefAuth must be used within a ChefAuthProvider');
+    throw new Error('useZapDevAuth must be used within a ZapDevAuthProvider');
   }
   return state;
 }
 
 export const SESSION_ID_KEY = 'sessionIdForConvex';
 
-export const ChefAuthProvider = ({
+export const ZapDevAuthProvider = ({
   children,
   redirectIfUnauthenticated,
 }: {
@@ -196,7 +196,7 @@ export const ChefAuthProvider = ({
 
   const isLoading = sessionId === undefined || isConvexAuthLoading;
   const isUnauthenticated = sessionId === null || !isAuthenticated;
-  const state: ChefAuthState = isLoading
+  const state: ZapDevAuthState = isLoading
     ? { kind: 'loading' }
     : isUnauthenticated
       ? { kind: 'unauthenticated' }
@@ -208,5 +208,5 @@ export const ChefAuthProvider = ({
     window.location.href = '/';
   }
 
-  return <ChefAuthContext.Provider value={{ state }}>{children}</ChefAuthContext.Provider>;
+  return <ZapDevAuthContext.Provider value={{ state }}>{children}</ZapDevAuthContext.Provider>;
 };

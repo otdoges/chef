@@ -4,7 +4,7 @@ import { useConvex } from 'convex/react';
 import { getConvexAuthToken, waitForConvexSessionId } from '~/lib/stores/sessionId';
 import { useCallback } from 'react';
 import { api } from '@convex/_generated/api';
-import { useChefAuth } from '~/components/chat/ChefAuthWrapper';
+import { useZapDevAuth } from '~/components/chat/ZapDevAuthWrapper';
 import { ContainerBootState, waitForBootStepCompleted } from '~/lib/stores/containerBootState';
 import { toast } from 'sonner';
 import { waitForConvexProjectConnection } from '~/lib/stores/convexProject';
@@ -15,7 +15,7 @@ const CREATE_PROJECT_TIMEOUT = 15000;
 export function useHomepageInitializeChat(chatId: string, setChatInitialized: (chatInitialized: boolean) => void) {
   const convex = useConvex();
   const { signIn } = useAuth();
-  const chefAuthState = useChefAuth();
+  const chefAuthState = useZapDevAuth();
   const isFullyLoggedIn = chefAuthState.kind === 'fullyLoggedIn';
   return useCallback(async () => {
     if (!isFullyLoggedIn) {

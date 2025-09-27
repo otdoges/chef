@@ -6,7 +6,7 @@ import { ExistingChat } from '~/components/ExistingChat.client';
 import { redirect, useLoaderData } from '@remix-run/react';
 
 export const meta: MetaFunction = () => {
-  return [{ title: 'Chef' }];
+  return [{ title: 'ZapDev' }];
 };
 
 export async function loader(args: LoaderFunctionArgs) {
