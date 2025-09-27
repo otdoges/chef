@@ -10,6 +10,7 @@ import { captureException } from '@sentry/remix';
 import { logger } from 'chef-agent/utils/logger';
 import type { ProviderType } from '~/lib/common/annotations';
 import { getEnv } from '~/lib/.server/env';
+import { getGatewayProvider } from '~/lib/.server/aiClient';
 // workaround for Vercel environment from
 // https://github.com/vercel/ai/issues/199#issuecomment-1605245593
 import { fetch } from '~/lib/.server/fetch';
@@ -73,6 +74,11 @@ export function getProvider(
 ): Provider {
   let model: string;
   let provider: Provider;
+
+  const useGateway = !!getEnv('VERCEL_AI_GATEWAY_API_KEY');
+  if (useGateway && (modelProvider === 'OpenAI' || modelProvider === 'OpenRouter' || modelProvider === 'Anthropic')) {
+    return getGatewayProvider(modelChoice || getEnv('AI_MODEL')) as Provider;
+  }
 
   switch (modelProvider) {
     case 'Google': {
