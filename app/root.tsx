@@ -1,6 +1,6 @@
 import { captureRemixErrorBoundaryError, captureMessage } from '@sentry/remix';
 import { useStore } from '@nanostores/react';
-import type { LinksFunction } from '@vercel/remix';
+import type { LinksFunction, LoaderFunctionArgs } from '@vercel/remix';
 import { json } from '@vercel/remix';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration, useRouteLoaderData, useRouteError } from '@remix-run/react';
 import { themeStore } from './lib/stores/theme';
@@ -23,13 +23,21 @@ import 'allotment/dist/style.css';
 import { ErrorDisplay } from './components/ErrorComponent';
 import useVersionNotificationBanner from './components/VersionNotificationBanner';
 
-export async function loader() {
+export async function loader({ request }: LoaderFunctionArgs) {
   // These environment variables are available in the client (they aren't secret).
   // eslint-disable-next-line local/no-direct-process-env
   const CONVEX_URL = process.env.VITE_CONVEX_URL || globalThis.process.env.CONVEX_URL!;
   const CONVEX_OAUTH_CLIENT_ID = globalThis.process.env.CONVEX_OAUTH_CLIENT_ID!;
+
+  const origin = new URL(request.url).origin;
+  const buildUrl = (host?: string) => (host && !host.startsWith('http') ? `https://${host}` : host);
   const WORKOS_REDIRECT_URI =
-    globalThis.process.env.VITE_WORKOS_REDIRECT_URI || globalThis.process.env.VERCEL_BRANCH_URL!;
+    globalThis.process.env.VITE_WORKOS_REDIRECT_URI ||
+    globalThis.process.env.WORKOS_REDIRECT_URI ||
+    buildUrl(globalThis.process.env.VERCEL_URL) ||
+    buildUrl(globalThis.process.env.VERCEL_BRANCH_URL) ||
+    origin;
+
   return json({
     ENV: { CONVEX_URL, CONVEX_OAUTH_CLIENT_ID, WORKOS_REDIRECT_URI },
   });
@@ -140,7 +148,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <>
       <AuthKitProvider
         clientId={import.meta.env.VITE_WORKOS_CLIENT_ID}
-        redirectUri={globalThis.process.env.WORKOS_REDIRECT_URI}
+        redirectUri={(loaderData as any)?.ENV.WORKOS_REDIRECT_URI}
         apiHostname={import.meta.env.VITE_WORKOS_API_HOSTNAME}
       >
         <ClientOnly>

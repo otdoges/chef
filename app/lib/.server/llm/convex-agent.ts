@@ -114,7 +114,9 @@ export async function convexAgent(args: {
     ...cleanupAssistantMessages(messages),
   ];
 
-  if (modelProvider === 'Bedrock') {
+  const usingGateway = !!getEnv('VERCEL_AI_GATEWAY_API_KEY');
+
+  if (!usingGateway && modelProvider === 'Bedrock') {
     messagesForDataStream[messagesForDataStream.length - 1].providerOptions = {
       bedrock: {
         cachePoint: {
@@ -124,7 +126,7 @@ export async function convexAgent(args: {
     };
   }
 
-  if (modelProvider === 'Anthropic') {
+  if (!usingGateway && modelProvider === 'Anthropic') {
     messagesForDataStream[messagesForDataStream.length - 1].providerOptions = {
       anthropic: {
         cacheControl: {

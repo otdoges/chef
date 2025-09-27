@@ -79,6 +79,20 @@ XAI_API_KEY=<your api key>
 
 Note: You can also add your own API keys through the ZapDev settings page.
 
+Alternatively, you can route all model calls through Vercel AI Gateway (recommended):
+
+```env
+# OpenAI-compatible base URL (defaults to https://ai-gateway.vercel.sh/v1)
+VERCEL_AI_GATEWAY_BASE_URL=https://ai-gateway.vercel.sh/v1
+# Required: Gateway API key
+VERCEL_AI_GATEWAY_API_KEY=<your gateway api key>
+# Default model to use when routing via the gateway
+# Examples: gpt-4.1-mini, anthropic/claude-3-5-sonnet-20241022, groq/llama-3.1-70b
+AI_MODEL=gpt-4.1-mini
+```
+
+When VERCEL_AI_GATEWAY_API_KEY is set, ZapDev will use the gateway for OpenAI, Anthropic, and OpenRouter model calls by default. Other providers (e.g. Google, XAI, Bedrock) continue to use their native SDKs unless configured otherwise.
+
 **6. Run ZapDev backend and frontend**
 
 Run the following commands in your terminal:

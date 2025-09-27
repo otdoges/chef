@@ -148,12 +148,17 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
+    const baseURL = getEnv('VERCEL_AI_GATEWAY_BASE_URL') || 'https://ai-gateway.vercel.sh/v1';
+    const gatewayKey = getEnv('VERCEL_AI_GATEWAY_API_KEY');
+    const aiModel = getEnv('AI_MODEL') || 'gpt-4.1-mini';
+
     const openai = new OpenAI({
-      apiKey: globalThis.process.env.OPENAI_API_KEY,
+      apiKey: gatewayKey || globalThis.process.env.OPENAI_API_KEY,
+      baseURL: gatewayKey ? baseURL : undefined,
     });
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4.1-mini',
+      model: aiModel,
       messages: [
         {
           role: 'system',
