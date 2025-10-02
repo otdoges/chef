@@ -35,20 +35,20 @@ export function ReferButton() {
             {referralCode && (
               <div className="space-y-2">
                 <p className="text-sm text-content-secondary">
-                  Refer a friend to Chef to earn more tokens. <br />
+                  Refer a friend to ZapDev to earn more tokens. <br />
                   Each referral gets you 85,000 more tokens.
                 </p>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
                     readOnly
-                    value={`https://convex.dev/try-chef/${referralCode}`}
+                    value={`https://convex.dev/try-zapdev/${referralCode}`}
                     className="flex-1 rounded-md border bg-bolt-elements-background-depth-2 px-3 py-1.5 text-sm text-content-primary"
                   />
                   <Button
                     variant="neutral"
                     size="xs"
-                    onClick={() => copyToClipboard(`https://convex.dev/try-chef/${referralCode}`)}
+                    onClick={() => copyToClipboard(`https://convex.dev/try-zapdev/${referralCode}`)}
                     tip="Copy link"
                     icon={<ClipboardIcon />}
                   />

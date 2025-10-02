@@ -8,6 +8,6 @@ to response to the message.
 This way we control the script if we ever needed to updated dependencies etc.
 
 Updating this script requires a deploy because the script is served from
-https://chef.convex.dev/scripts/worker.bundled.mjs. The WebContainer _can't_ make requests of localhost,
+https://zapdev.convex.dev/scripts/worker.bundled.mjs. The WebContainer _can't_ make requests of localhost,
 so use a proxy if you're updating it live in development. You'll need to add that to vite.config.ts
 server.allowedHosts to use it.

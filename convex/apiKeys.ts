@@ -251,8 +251,8 @@ export const validateOpenrouterApiKey = action({
       method: "GET",
       headers: {
         Authorization: `Bearer ${args.apiKey}`,
-        "HTTP-Referer": process.env.OPENROUTER_SITE_URL ?? "https://chef.convex.dev",
-        "X-Title": process.env.OPENROUTER_APP_NAME ?? "Chef",
+        "HTTP-Referer": process.env.OPENROUTER_SITE_URL ?? "https://zapdev.convex.dev",
+        "X-Title": process.env.OPENROUTER_APP_NAME ?? "ZapDev",
       },
     });
 

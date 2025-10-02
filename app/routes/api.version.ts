@@ -5,7 +5,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const globalEnv = globalThis.process.env;
   const projectId = globalEnv.VERCEL_PROJECT_ID;
   const teamId = globalEnv.VERCEL_TEAM_ID;
-  const productionBranchUrl = globalEnv.VERCEL_PRODUCTION_BRANCH_URL || 'chef.convex.dev';
+  const productionBranchUrl = globalEnv.VERCEL_PRODUCTION_BRANCH_URL || 'zapdev.convex.dev';
 
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {

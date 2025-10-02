@@ -37,7 +37,7 @@ export function useAuthToken() {
       () => {
         grabAuthToken();
       },
-      // If there isn't one, check again very soon! This is unusual in Chef.
+      // If there isn't one, check again very soon! This is unusual in ZapDev.
       // If there is one, occasionally check for a new one to try to catch the update.
       authToken ? 10 * 60 * 1000 : 100,
     );

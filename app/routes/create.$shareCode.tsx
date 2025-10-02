@@ -26,7 +26,7 @@ export const meta: MetaFunction = () => {
     },
     {
       property: 'og:image',
-      content: 'https://chef.convex.dev/social_preview_share.png',
+      content: 'https://zapdev.convex.dev/social_preview_share.png',
     },
   ];
 };

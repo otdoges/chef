@@ -1,11 +1,11 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import { memo, useEffect, useRef, useState } from 'react';
-import type { FileMap } from 'chef-agent/types';
+import type { FileMap } from 'zapdev-agent/types';
 import { classNames } from '~/utils/classNames';
-import { WORK_DIR } from 'chef-agent/constants';
+import { WORK_DIR } from 'zapdev-agent/constants';
 import { cubicEasingFn } from '~/utils/easings';
-import { renderLogger } from 'chef-agent/utils/logger';
+import { renderLogger } from 'zapdev-agent/utils/logger';
 import { FileTree } from './FileTree';
 import { FileIcon, ChevronRightIcon } from '@radix-ui/react-icons';
 

@@ -1,33 +1,33 @@
 import { CoreMessage, generateText, LanguageModelUsage } from 'ai';
 import * as walkdir from 'walkdir';
-import { path } from 'chef-agent/utils/path';
+import { path } from 'zapdev-agent/utils/path';
 import { ZapDevResult, ZapDevModel } from './types';
 import { copyFileSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { execFileSync } from 'child_process';
-import { ChatContextManager } from 'chef-agent/ChatContextManager';
+import { ChatContextManager } from 'zapdev-agent/ChatContextManager';
 import { UIMessage } from 'ai';
 import { deploy, npmInstall, runTypecheck } from './convexBackend';
-import { StreamingMessageParser } from 'chef-agent/message-parser';
+import { StreamingMessageParser } from 'zapdev-agent/message-parser';
 import { withConvexBackend } from './convexBackend';
-import { initializeConvexAuth } from 'chef-agent/convexAuth';
-import { deployTool } from 'chef-agent/tools/deploy';
-import { ROLE_SYSTEM_PROMPT } from 'chef-agent/prompts/system';
+import { initializeConvexAuth } from 'zapdev-agent/convexAuth';
+import { deployTool } from 'zapdev-agent/tools/deploy';
+import { ROLE_SYSTEM_PROMPT } from 'zapdev-agent/prompts/system';
 import { generateId } from 'ai';
-import { ConvexToolSet, SystemPromptOptions } from 'chef-agent/types';
-import { npmInstallTool, npmInstallToolParameters } from 'chef-agent/tools/npmInstall';
-import { lookupDocsTool } from 'chef-agent/tools/lookupDocs';
-import { getConvexDeploymentNameTool } from 'chef-agent/tools/getConvexDeploymentName';
-import { cleanupAssistantMessages } from 'chef-agent/cleanupAssistantMessages';
-import { generalSystemPrompt } from 'chef-agent/prompts/system';
-import { makePartId } from 'chef-agent/partId';
-import { logger } from 'chef-agent/utils/logger';
+import { ConvexToolSet, SystemPromptOptions } from 'zapdev-agent/types';
+import { npmInstallTool, npmInstallToolParameters } from 'zapdev-agent/tools/npmInstall';
+import { lookupDocsTool } from 'zapdev-agent/tools/lookupDocs';
+import { getConvexDeploymentNameTool } from 'zapdev-agent/tools/getConvexDeploymentName';
+import { cleanupAssistantMessages } from 'zapdev-agent/cleanupAssistantMessages';
+import { generalSystemPrompt } from 'zapdev-agent/prompts/system';
+import { makePartId } from 'zapdev-agent/partId';
+import { logger } from 'zapdev-agent/utils/logger';
 import { traced, wrapTraced } from 'braintrust';
-import { viewTool } from 'chef-agent/tools/view';
-import { editTool, editToolParameters } from 'chef-agent/tools/edit';
-import { renderFile } from 'chef-agent/utils/renderFile';
-import { renderDirectory } from 'chef-agent/utils/renderDirectory';
-import { viewParameters } from 'chef-agent/tools/view';
-import { lookupDocsParameters, docs, type DocKey } from 'chef-agent/tools/lookupDocs';
+import { viewTool } from 'zapdev-agent/tools/view';
+import { editTool, editToolParameters } from 'zapdev-agent/tools/edit';
+import { renderFile } from 'zapdev-agent/utils/renderFile';
+import { renderDirectory } from 'zapdev-agent/utils/renderDirectory';
+import { viewParameters } from 'zapdev-agent/tools/view';
+import { lookupDocsParameters, docs, type DocKey } from 'zapdev-agent/tools/lookupDocs';
 
 const MAX_STEPS = 32;
 const MAX_DEPLOYS = 10;
@@ -101,7 +101,7 @@ export async function zapdevTask(model: ZapDevModel, outputDir: string, userMess
       usingOpenAi: model.name.startsWith('gpt-'),
       usingGoogle: model.name.startsWith('gemini-'),
 
-      // TODO: We need to set up a Convex deployment running the `chef`
+      // TODO: We need to set up a Convex deployment running ZapDev
       // app to setup the OpenAI and Resend proxies + manage their tokens.
       // For now, we are enabling the proxies to mirror the behavior of production. These
       // proxies should never be used in the test kitchen.
